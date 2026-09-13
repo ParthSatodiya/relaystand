@@ -1,26 +1,69 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/*
+ * Track — the one palette. Everything in the app reads from these tokens; no
+ * component hard-codes a colour. See DESIGN.md for what each one is for.
+ */
+@theme {
+  --color-track: #0d2540; /* page ground */
+  --color-raised: #123152; /* anything sitting on the ground: cards, inputs, menus */
+  --color-line: rgba(233, 243, 255, 0.16); /* borders you should see */
+  --color-line-soft: rgba(233, 243, 255, 0.07); /* borders between rows */
+  --color-chalk: #e9f3ff; /* text */
+  --color-dim: #8fb0cd; /* secondary text — 4.9:1 on track, safe at any size */
+  --color-baton: #c9f24a; /* the accent: finished work, current page, primary action */
+  --color-baton-ink: #0d2540; /* text on a baton fill */
+  --color-stall: #ff6f5e; /* blocked, destructive, errors */
+  --color-warn: #f5b93f; /* dragging too long, away, waiting */
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --font-sans: var(--font-barlow), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-anton), Impact, ui-sans-serif, sans-serif;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--color-track);
+  color: var(--color-chalk);
+  font-family: var(--font-sans);
+}
+
+/* Headings and big numbers carry the personality; set once, used everywhere. */
+.display {
+  font-family: var(--font-display);
+  text-transform: uppercase;
+  letter-spacing: 0.01em;
+  line-height: 1.02;
+  font-weight: 400;
+}
+
+/* A lane bar: width is time, fill is state. The board, reports and team lists
+   all draw the same three shapes. */
+.hatch {
+  background: repeating-linear-gradient(
+    115deg,
+    rgba(255, 111, 94, 0.26) 0 7px,
+    rgba(255, 111, 94, 0.08) 7px 14px
+  );
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(233, 243, 255, 0.18);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(233, 243, 255, 0.3);
+}
+
+/* Native date inputs and select arrows are drawn by the browser in its own
+   theme; tell it this surface is dark so they come back legible. */
+input,
+select,
+textarea {
+  color-scheme: dark;
 }
