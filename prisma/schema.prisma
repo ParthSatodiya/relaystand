@@ -1,0 +1,181 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// A person who has logged in. Auth.js owns provider identity (Google / Entra),
+// so there is no googleId here. Email is the join key to TeamMember.
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique // always stored lowercase
+  fullName  String
+  avatarUrl String   @default("")
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  teams    Team[]
+  standups Standup[]
+  orgs     Org[]
+}
+
+// A company or workspace. Teams live inside one, and so does the audit trail.
+// Membership is by email, like TeamMember — an admin can invite someone who has
+// never signed in, and the row is waiting when they do.
+model Org {
+  id          Int      @id @default(autoincrement())
+  name        String
+  slug        String   @unique // the /orgs/<slug> segment, and what a join request quotes
+  logoPath    String   @default("") // file name under UPLOAD_DIR; served by /api/orgs/[slug]/logo
+  emailDomain String   @default("") // optional. Set it and matching emails find the org by themselves
+  createdBy   Int
+  createdAt   DateTime @default(now())
+
+  creator User         @relation(fields: [createdBy], references: [id], onDelete: Cascade)
+  members OrgMember[]
+  teams   Team[]
+  events  AuditEvent[]
+}
+
+model OrgMember {
+  id        Int      @id @default(autoincrement())
+  orgId     Int
+  email     String // always stored lowercase
+  name      String
+  role      String   @default("member") // "admin" | "member"
+  // "pending" is a join request waiting on an admin; "deactivated" keeps every
+  // row they ever wrote while closing the door.
+  status    String   @default("active") // "pending" | "active" | "deactivated"
+  createdAt DateTime @default(now())
+
+  org Org @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@unique([orgId, email])
+  @@index([email])
+}
+
+// Who did what, written at the time it happened. `summary` is composed on write
+// so the log page stays a dumb list — no re-deriving old events from new code.
+model AuditEvent {
+  id         Int      @id @default(autoincrement())
+  orgId      Int
+  teamId     Int? // null for org-level events
+  actorEmail String
+  actorName  String
+  action     String // "member.approved", "role.changed", "task.reassigned", ...
+  summary    String
+  createdAt  DateTime @default(now())
+
+  org Org @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@index([orgId, createdAt])
+  @@index([teamId, createdAt])
+}
+
+model Team {
+  id        Int      @id @default(autoincrement())
+  orgId     Int
+  name      String
+  createdBy Int
+  createdAt DateTime @default(now())
+
+  org      Org          @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  creator  User         @relation(fields: [createdBy], references: [id], onDelete: Cascade)
+  members  TeamMember[]
+  standups Standup[]
+}
+
+// ponytail: no userId FK. A member IS their work email — the session email is
+// matched against it at request time. A member added before they ever log in
+// still works as a plain name.
+model TeamMember {
+  id        Int      @id @default(autoincrement())
+  teamId    Int
+  name      String
+  email     String // always stored lowercase
+  // "member" covers anyone who does the work — dev, QA, design. "observer"
+  // reads the board and the reports and writes nothing.
+  role      String   @default("member") // "lead" | "member" | "observer"
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  team         Team          @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  standupItems StandupItem[]
+  absences     Absence[]
+
+  @@unique([teamId, email])
+  @@index([email])
+}
+
+model Standup {
+  id        Int      @id @default(autoincrement())
+  teamId    Int
+  date      String // YYYY-MM-DD
+  createdBy Int
+  notes     String   @default("")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  team     Team          @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  creator  User          @relation(fields: [createdBy], references: [id], onDelete: Cascade)
+  items    StandupItem[]
+  absences Absence[]
+
+  @@unique([teamId, date])
+}
+
+model StandupItem {
+  id            Int      @id @default(autoincrement())
+  standupId     Int
+  memberId      Int
+  title         String
+  comment       String   @default("")
+  status        String   @default("open") // "open" | "done" | "blocked"
+  carriedFromId Int? // the item on the previous standup this was copied from
+  // ponytail: denormalised so "how many days has this been dragging" is a
+  // subtraction, not a recursive walk up the carriedFrom chain. The date a
+  // task first appeared never changes, so there is nothing to keep in sync.
+  originDate    String   @default("") // YYYY-MM-DD the task first appeared
+  displayOrder  Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  standup     Standup       @relation(fields: [standupId], references: [id], onDelete: Cascade)
+  member      TeamMember    @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  carriedFrom StandupItem?  @relation("CarriedItems", fields: [carriedFromId], references: [id], onDelete: SetNull)
+  carriedTo   StandupItem[] @relation("CarriedItems")
+  links       StandupItemLink[]
+
+  @@index([standupId])
+  @@index([memberId])
+}
+
+// Any number of pointers to the work: a Jira ticket, one or more PRs, anything
+// else. The provider is read off the URL at render time, so a new tracker needs
+// no migration.
+model StandupItemLink {
+  id        Int      @id @default(autoincrement())
+  itemId    Int
+  url       String
+  createdAt DateTime @default(now())
+
+  item StandupItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@index([itemId])
+}
+
+// A member marked away for one standup day.
+model Absence {
+  id        Int      @id @default(autoincrement())
+  standupId Int
+  memberId  Int
+  createdAt DateTime @default(now())
+
+  standup Standup    @relation(fields: [standupId], references: [id], onDelete: Cascade)
+  member  TeamMember @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@unique([standupId, memberId])
+}
