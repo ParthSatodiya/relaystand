@@ -81,28 +81,7 @@ export default function WeekGrid({
     <div className="overflow-x-auto">
       <div className="min-w-[720px]">
         <div className="grid items-end" style={track}>
-          {/* Press play to walk the team from the top; each row starts on that
-              person, which is what a lead reaches for when someone must leave. */}
-          <span className="flex items-center pb-2">
-            {last.held ? (
-              <Link
-                href={`/teams/${teamId}/walkthrough?date=${last.date}`}
-                title="Walk the team through this day"
-                aria-label="Walk the team through this day"
-                className="grid size-7 place-items-center rounded-full bg-baton text-baton-ink transition hover:brightness-105 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-baton"
-              >
-                <Play size={13} />
-              </Link>
-            ) : (
-              <span
-                aria-hidden="true"
-                title="No standup on this day yet"
-                className="grid size-7 place-items-center rounded-full border border-line text-dim"
-              >
-                <Play size={13} />
-              </span>
-            )}
-          </span>
+          <span />
           {week.columns.map((col) => (
             <div
               key={col.date}

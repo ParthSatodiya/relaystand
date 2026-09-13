@@ -109,11 +109,12 @@ only takes a column if the team actually stood up on it.
   stood up on: a lime dot for held, coral when that day had something blocked, a
   ring on today, future days disabled. `Today` is a small chip beside it, always
   rendered and disabled on the day itself.
-- **Run standup is the board's one baton control.** A primary button beside the
-  day's figures starts at the top; the ▶ in the grid's person column does the
-  same, and each person's mark turns into a ▶ to start on them — what a lead
-  reaches for when someone has to leave early. On a day with no standup both go
-  outlined and dim rather than faded: dimming a baton fill turns it olive.
+- **Run standup is the board's one baton control** — a primary button beside the
+  day's figures, which starts at the top. In the grid, a person's mark turns into
+  a ▶ on hover to start on them instead: what a lead reaches for when someone has
+  to leave early. One button for the meeting, one gesture a person; no second
+  whole-team control. On a day with no standup the button goes outlined and dim
+  rather than faded, because dimming a baton fill turns it olive.
 - **The day's figures are the week's filter.** Finished, running and blocked are
   three chips; pressing one narrows the grid. No chip pressed and every chip
   pressed mean the same thing — show everything — so there is no separate clear
