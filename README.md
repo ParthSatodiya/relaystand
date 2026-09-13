@@ -17,7 +17,7 @@ finished what.
 
 ## Requirements
 
-Node 22+, and a Google or Microsoft (Entra ID) OAuth app for sign-in.
+Node 26+, and a Google or Microsoft (Entra ID) OAuth app for sign-in.
 
 ## Local setup
 

@@ -1,12 +1,15 @@
 # --- deps ---------------------------------------------------------------
-FROM node:22-alpine AS deps
+FROM node:26-alpine AS deps
 WORKDIR /app
+# better-sqlite3 is native: build it here, in the stage that is thrown away.
+RUN apk add --no-cache python3 make g++
 COPY package.json package-lock.json ./
 COPY prisma ./prisma
+COPY prisma.config.ts ./
 RUN npm ci
 
 # --- build --------------------------------------------------------------
-FROM node:22-alpine AS build
+FROM node:26-alpine AS build
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
@@ -15,7 +18,7 @@ ENV DATABASE_URL="file:./dev.db"
 RUN npx prisma generate && npm run build
 
 # --- runtime ------------------------------------------------------------
-FROM node:22-alpine AS runner
+FROM node:26-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=3000
@@ -27,8 +30,10 @@ RUN apk add --no-cache openssl && mkdir -p /data
 COPY --from=build /app/.next/standalone ./
 COPY --from=build /app/.next/static ./.next/static
 COPY --from=build /app/public ./public
-# Needed so `prisma migrate deploy` can run on start.
+# Needed so `prisma migrate deploy` can run on start. Prisma 7 keeps the
+# connection URL in prisma.config.ts, not in the schema, so that ships too.
 COPY --from=build /app/prisma ./prisma
+COPY --from=build /app/prisma.config.ts ./prisma.config.ts
 COPY --from=build /app/node_modules/prisma ./node_modules/prisma
 COPY --from=build /app/node_modules/@prisma ./node_modules/@prisma
 COPY --from=build /app/node_modules/.prisma ./node_modules/.prisma
