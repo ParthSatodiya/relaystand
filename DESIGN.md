@@ -99,9 +99,17 @@ only takes a column if the team actually stood up on it.
 - Carry-forward writes a new row a day, so bars are stitched back together by
   following `carriedFromId` inside the window. A task older than the window keeps
   a `warn` left edge instead of pretending it began at the first column.
-- The grid is for reading. The only edit on it is finishing a task on today's
-  column, plus a quick add a person; title, comment, links, order, status and
-  away all live in run mode, which a click on any person or bar opens.
+- The grid is for reading. The only edits on it are finishing a task on today's
+  column, a quick add a person, and starting a day that was never held; title,
+  comment, links, order, status and away all live in run mode, which a click on
+  any person or bar opens.
+- **The arrows walk working days.** Back from Monday is Friday — unless the team
+  actually stood up on that weekend, which makes it a stop. The day you are
+  viewing always earns a column, weekend or not, so picking a Saturday from the
+  date field is how you start a weekend standup.
+- A day with no standup carries **+ Start** in its own column, in the row under
+  the grid. There is no separate empty-state panel: the action belongs to the day
+  it starts, so Tuesday can be started without leaving Thursday.
 - A bar's title truncates; the full title and its comment ride in the `title`
   attribute, so hovering tells you the rest.
 - Below `md` the grid is hidden and the day's list takes over — five columns on a

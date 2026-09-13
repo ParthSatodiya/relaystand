@@ -3,10 +3,11 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { addDays, format, isToday, parseISO } from 'date-fns';
+import { format, isToday, parseISO } from 'date-fns';
 import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useRun } from '@/lib/useRun';
+import { stepDay } from '@/lib/days';
 import { STALLED_DAYS, ui } from '@/lib/ui';
 import MemberSection, { type MemberRow } from '@/components/MemberSection';
 import WeekGrid, { type Week } from '@/components/WeekGrid';
@@ -26,7 +27,6 @@ export default function Board({
   date,
   board,
   week,
-  neighbours,
   doneLastStandup,
   me,
 }: {
@@ -35,7 +35,6 @@ export default function Board({
   date: string;
   board: BoardData | null;
   week: Week;
-  neighbours: { prev: string | null; next: string | null };
   doneLastStandup: Record<number, number>;
   me: { memberId: number; isLead: boolean; canWrite: boolean };
 }) {
@@ -46,10 +45,9 @@ export default function Board({
   // Arrows hop between days that actually have a standup — skips the gaps. The
   // date picker below stays a free pick, so a lead can still land on an empty
   // day to start one there.
-  const { prev: prevDate } = neighbours;
-  // The arrows move the window a day at a time; the hop to a day that actually
-  // held a standup is a separate link, so a skipped week is still one click.
-  const shift = (days: number) => format(addDays(parseISO(date), days), 'yyyy-MM-dd');
+  // The arrows walk working days — the weekend is not a place the team works,
+  // unless they stood up on one. The date field is the way onto any other day.
+  const shift = (dir: -1 | 1) => stepDay(date, dir, week.heldDates);
   const items = board?.members.flatMap((m) => m.items) ?? [];
   // What the tab icon says: something is blocked, or something unfinished has
   // been running long enough to count as stuck.
@@ -77,7 +75,7 @@ export default function Board({
         <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={() => goto(shift(-1))}
-            aria-label="Back one day"
+            aria-label="Previous working day"
             className={`${ui.btn} ${ui.btnGhost} px-2.5`}
           >
             <ChevronLeft size={16} />
@@ -92,7 +90,7 @@ export default function Board({
           <button
             onClick={() => goto(shift(1))}
             disabled={date >= todayStr()}
-            aria-label="Forward one day"
+            aria-label="Next working day"
             className={`${ui.btn} ${ui.btnGhost} px-2.5 disabled:opacity-30`}
           >
             <ChevronRight size={16} />
@@ -141,45 +139,13 @@ export default function Board({
         </p>
       )}
 
-      {!board && (
-        <div className={ui.empty}>
-          <p className="font-medium">No standup on this day yet</p>
-          <p className="mx-auto mt-1.5 max-w-md text-sm text-dim">
-            Starting it copies every unfinished task from the last standup you held — even if that
-            was several days ago.
-          </p>
-          <button
-            disabled={busy || !me.canWrite}
-            onClick={() =>
-              run(() =>
-                api(`/api/teams/${teamId}/standups`, {
-                  method: 'POST',
-                  body: JSON.stringify({ date }),
-                }),
-              )
-            }
-            className={`${ui.btn} ${ui.btnPrimary} mt-5`}
-          >
-            <Plus size={16} /> Start standup
-          </button>
-        </div>
-      )}
-
-      {/* The desk view: five working days of lanes. Below md it would be five
+      {/* The desk view: the working week as lanes. Below md it would be five
           unreadable columns, so the phone gets the day's list instead. */}
       <section className="hidden md:block">
         <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-line pb-2.5">
           <h2 className={ui.h2}>The week</h2>
           <p className="text-xs text-dim">
             Bar length is days running · click a person or a task to open run mode
-            {prevDate && (
-              <>
-                {' · '}
-                <button onClick={() => goto(prevDate)} className="text-baton hover:underline">
-                  jump to {format(parseISO(prevDate), 'd MMM')}
-                </button>
-              </>
-            )}
           </p>
         </div>
         <WeekGrid
@@ -192,6 +158,30 @@ export default function Board({
           run={run}
         />
       </section>
+
+      {!board && (
+        <p className="text-sm text-dim md:hidden">
+          No standup on this day yet. Starting one copies every unfinished task from the last
+          standup you held — even if that was several days ago.
+        </p>
+      )}
+
+      {!board && me.canWrite && (
+        <button
+          disabled={busy}
+          onClick={() =>
+            run(() =>
+              api(`/api/teams/${teamId}/standups`, {
+                method: 'POST',
+                body: JSON.stringify({ date }),
+              }),
+            )
+          }
+          className={`${ui.btn} ${ui.btnPrimary} md:hidden`}
+        >
+          <Plus size={16} /> Start standup
+        </button>
+      )}
 
       {board && (
         <>

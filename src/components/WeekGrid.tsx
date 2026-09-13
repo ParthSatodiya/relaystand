@@ -33,6 +33,7 @@ export interface WeekMember {
 
 export interface Week {
   columns: { date: string; held: boolean; weekend: boolean }[];
+  heldDates: string[];
   members: WeekMember[];
 }
 
@@ -60,6 +61,8 @@ export default function WeekGrid({
   run: (fn: () => Promise<unknown>) => Promise<void>;
 }) {
   const [addFor, setAddFor] = useState<number | null>(null);
+  // When the whole week is empty, saying so once a person is just noise.
+  const anyWork = week.members.some((m) => m.bars.length > 0);
   const [title, setTitle] = useState('');
   const cols = week.columns.length;
   const last = week.columns[cols - 1];
@@ -157,7 +160,7 @@ export default function WeekGrid({
                 gridTemplateColumns: `repeat(${cols}, 1fr)`,
               }}
             >
-              {member.bars.length === 0 && (
+              {member.bars.length === 0 && (anyWork || member.absentOn.includes(last.date)) && (
                 <p className="col-span-full self-center pl-3 text-xs text-dim">
                   {member.absentOn.includes(last.date) ? 'Away' : 'Nothing on the board'}
                 </p>
@@ -250,6 +253,49 @@ export default function WeekGrid({
             )}
           </div>
         ))}
+
+        {/* The empty-day action, in the column of the day it starts. A future
+            day is left blank — it has nothing to carry forward yet. */}
+        {editable && week.columns.some((col) => !col.held && col.date <= today) && (
+          <div className="grid border-t border-line" style={track}>
+            <p className="py-3 pr-3 text-[11px] uppercase tracking-[0.12em] text-dim">
+              Nothing held
+            </p>
+            <div
+              className="grid"
+              style={{
+                gridColumn: '2 / -1',
+                gridRow: 1,
+                gridTemplateColumns: `repeat(${cols}, 1fr)`,
+              }}
+            >
+              {week.columns.map((col) => (
+                <div key={col.date} className="grid place-items-center py-2">
+                  {!col.held && col.date <= today && (
+                    <button
+                      disabled={busy}
+                      title={`Start the standup for ${format(
+                        parseISO(col.date),
+                        'EEEE d MMMM',
+                      )} — it carries every unfinished task forward`}
+                      onClick={() =>
+                        run(() =>
+                          api(`/api/teams/${teamId}/standups`, {
+                            method: 'POST',
+                            body: JSON.stringify({ date: col.date }),
+                          }),
+                        )
+                      }
+                      className="rounded border border-dashed border-line px-2.5 py-1 text-xs text-dim transition hover:border-solid hover:border-baton hover:text-baton focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-baton"
+                    >
+                      + Start
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

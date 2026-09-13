@@ -1,4 +1,8 @@
-import { differenceInCalendarDays, format, getDay, parseISO, subDays } from 'date-fns';
+import { differenceInCalendarDays, format, parseISO } from 'date-fns';
+import { isWeekend, stepDay, weekColumns } from '@/lib/days';
+
+// Re-exported so the server side has one import for a standup's world.
+export { stepDay, weekColumns };
 import prisma from '@/lib/db';
 import { HttpError } from '@/lib/http';
 
@@ -89,29 +93,6 @@ export async function loadBoard(teamId: number, date: string) {
   };
 }
 
-/** Saturday and Sunday never take a column of their own. */
-function isWeekend(date: string) {
-  const day = getDay(parseISO(date));
-  return day === 0 || day === 6;
-}
-
-/**
- * The columns of the week grid: the last `count` working days ending at
- * `endDate`, plus any weekend that actually held a standup — a team that stood
- * up on a Saturday should still see it. Pure, so the test can pin it.
- */
-export function weekColumns(endDate: string, standupDates: Iterable<string>, count = 5) {
-  const held = new Set(standupDates);
-  const columns: string[] = [];
-  // A run of five working days spans at most seven days; twenty is slack for a
-  // long holiday without turning this into an unbounded walk.
-  for (let back = 0; back < 20 && columns.length < count; back++) {
-    const date = format(subDays(parseISO(endDate), back), 'yyyy-MM-dd');
-    if (!isWeekend(date) || held.has(date)) columns.push(date);
-  }
-  return columns.reverse();
-}
-
 /**
  * The week grid: every column, and one bar a task per person spanning the days
  * that task has been on the board.
@@ -128,7 +109,11 @@ export async function loadWeek(teamId: number, endDate: string, count = 5) {
     take: 20,
     select: { date: true },
   });
-  const columns = weekColumns(endDate, recent.map((r) => r.date), count);
+  const columns = weekColumns(
+    endDate,
+    recent.map((r) => r.date),
+    count,
+  );
 
   const [standups, members] = await Promise.all([
     prisma.standup.findMany({
@@ -185,11 +170,14 @@ export async function loadWeek(teamId: number, endDate: string, count = 5) {
 
   const heldOn = new Set(standups.map((s) => s.date));
   const absent = new Map(
-    standups.flatMap((s) => s.absences.map((a) => [`${a.memberId}:${s.date}`, true]))
+    standups.flatMap((s) => s.absences.map((a) => [`${a.memberId}:${s.date}`, true])),
   );
 
   return {
     columns: columns.map((date) => ({ date, held: heldOn.has(date), weekend: isWeekend(date) })),
+    // For the arrows: the recent days that held one, so a step can stop on a
+    // weekend the team actually worked.
+    heldDates: recent.map((r) => r.date),
     members: members
       .map((member) => ({
         memberId: member.id,
@@ -202,27 +190,6 @@ export async function loadWeek(teamId: number, endDate: string, count = 5) {
       // A removed person stays visible on the days they still have work.
       .filter((m) => m.isActive || m.bars.length > 0),
   };
-}
-
-/**
- * The standup days either side of `date`, so the board's arrows can skip the
- * gaps. Two seeks rather than the team's whole history, which the client would
- * otherwise carry around to read two values out of.
- */
-export async function neighbourDates(teamId: number, date: string) {
-  const [prev, next] = await Promise.all([
-    prisma.standup.findFirst({
-      where: { teamId, date: { lt: date } },
-      orderBy: { date: 'desc' },
-      select: { date: true },
-    }),
-    prisma.standup.findFirst({
-      where: { teamId, date: { gt: date } },
-      orderBy: { date: 'asc' },
-      select: { date: true },
-    }),
-  ]);
-  return { prev: prev?.date ?? null, next: next?.date ?? null };
 }
 
 /** How many tasks each member finished on the standup before this date. */
@@ -283,13 +250,13 @@ export async function startStandup(teamId: number, date: string, userId: number)
   });
 
   const activeMemberIds = new Set(
-    (await prisma.teamMember.findMany({ where: { teamId, isActive: true }, select: { id: true } })).map(
-      (m) => m.id
-    )
+    (
+      await prisma.teamMember.findMany({ where: { teamId, isActive: true }, select: { id: true } })
+    ).map((m) => m.id),
   );
 
   const carried = (previous?.items ?? []).filter(
-    (i) => i.status !== 'done' && activeMemberIds.has(i.memberId)
+    (i) => i.status !== 'done' && activeMemberIds.has(i.memberId),
   );
 
   return prisma.$transaction(async (tx) => {

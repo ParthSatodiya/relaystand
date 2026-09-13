@@ -19,6 +19,7 @@ let prisma: (typeof import('@/lib/db'))['default'];
 let startStandup: Lib['startStandup'];
 let loadWeek: Lib['loadWeek'];
 let weekColumns: Lib['weekColumns'];
+let stepDay: Lib['stepDay'];
 let reopenItem: Lib['reopenItem'];
 let assignItem: Lib['assignItem'];
 let daysDragging: Lib['daysDragging'];
@@ -46,9 +47,8 @@ before(async () => {
   execFileSync('npx', ['prisma', 'migrate', 'deploy'], { env: process.env, stdio: 'pipe' });
 
   prisma = (await import('@/lib/db')).default;
-  ({ startStandup, daysDragging, reopenItem, assignItem, loadWeek, weekColumns } = await import(
-    '@/lib/standup'
-  ));
+  ({ startStandup, daysDragging, reopenItem, assignItem, loadWeek, weekColumns, stepDay } =
+    await import('@/lib/standup'));
   ({ taskLink } = await import('@/lib/links'));
   ({ teamContext, requireTeamMember } = await import('@/lib/access'));
   ({ auditTeamFilter } = await import('@/lib/audit'));
@@ -446,4 +446,38 @@ test('a task carried in from before the window says so rather than starting at t
   assert.equal(blocker.from, 0);
   assert.equal(blocker.startsBefore, true, 'its Monday row is outside this window');
   assert.equal(blocker.daysDragging, 3, 'the age still counts from Monday');
+});
+
+test('the day you are looking at is always a column, even an empty Saturday', () => {
+  // Picking a weekend from the date field is the only way onto one, so the
+  // grid must contain it — otherwise there is nowhere to start that standup.
+  const saturday = '2026-02-28';
+  const columns = weekColumns(saturday, []);
+
+  assert.equal(columns[columns.length - 1], saturday, 'the viewed day is the last column');
+  assert.equal(columns.length, 5);
+  assert.deepEqual(
+    columns.slice(0, 4),
+    ['2026-02-24', '2026-02-25', '2026-02-26', '2026-02-27'],
+    'the days behind it are still working days'
+  );
+});
+
+test('the arrows walk working days, and stop on a weekend that held a standup', () => {
+  const MONDAY = '2026-03-02';
+  const FRIDAY = '2026-02-27';
+  const SATURDAY = '2026-02-28';
+
+  // Back from Monday is Friday — the weekend is not a place the team works.
+  assert.equal(stepDay(MONDAY, -1, []), FRIDAY);
+  // Forward from Friday is Monday, for the same reason.
+  assert.equal(stepDay(FRIDAY, 1, []), MONDAY);
+
+  // Unless they did stand up on it: then that Saturday is a stop in both
+  // directions, because there is work on it to see.
+  assert.equal(stepDay(FRIDAY, 1, [SATURDAY]), SATURDAY);
+  assert.equal(stepDay(MONDAY, -1, [SATURDAY]), SATURDAY);
+
+  // And an ordinary weekday step is just the next day.
+  assert.equal(stepDay('2026-03-04', -1, []), '2026-03-03');
 });
