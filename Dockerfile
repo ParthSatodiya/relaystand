@@ -17,6 +17,17 @@ COPY . .
 ENV DATABASE_URL="file:./dev.db"
 RUN npx prisma generate && npm run build
 
+# --- prisma CLI ---------------------------------------------------------
+# The Prisma 7 CLI needs its own hoisted dependencies (effect, and more) at
+# runtime, so hand-picking node_modules/prisma out of the app tree is not
+# enough. Install it alone, production-only, at the version package.json pins.
+FROM node:26-alpine AS migrator
+WORKDIR /migrator
+COPY package.json ./
+RUN V=$(node -p "require('./package.json').devDependencies.prisma") \
+ && rm package.json && npm init -y >/dev/null \
+ && npm i --omit=dev --no-fund --no-audit prisma@$V
+
 # --- runtime ------------------------------------------------------------
 FROM node:26-alpine AS runner
 WORKDIR /app
@@ -34,11 +45,13 @@ COPY --from=build /app/public ./public
 # connection URL in prisma.config.ts, not in the schema, so that ships too.
 COPY --from=build /app/prisma ./prisma
 COPY --from=build /app/prisma.config.ts ./prisma.config.ts
-COPY --from=build /app/node_modules/prisma ./node_modules/prisma
-COPY --from=build /app/node_modules/@prisma ./node_modules/@prisma
 COPY --from=build /app/node_modules/.prisma ./node_modules/.prisma
+# Merged, not siloed: prisma.config.ts does `import ... from "prisma/config"`,
+# which only resolves if the CLI sits in the app tree. The two trees do not
+# overlap — the app has @prisma/client and the adapter, the CLI has the rest.
+COPY --from=migrator /migrator/node_modules ./node_modules
 
 EXPOSE 3000
 # Migrate then serve — a new deploy applies pending migrations by itself.
-# The Prisma CLI is invoked by path: the standalone output has no node_modules/.bin.
+# The CLI is invoked by path: the standalone output has no node_modules/.bin.
 CMD ["sh", "-c", "node node_modules/prisma/build/index.js migrate deploy && node server.js"]
