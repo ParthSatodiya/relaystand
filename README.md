@@ -83,3 +83,12 @@ npm test
 Covers the part worth covering: carry-forward across a skipped day, finished
 tasks not carrying, deactivated members not carrying, blocked staying blocked,
 and the days-dragging count staying anchored to the day a task first appeared.
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) — the four commands, and the handful of
+rules that are easy to break.
+
+## Licence
+
+Apache License 2.0. See [LICENSE](LICENSE).

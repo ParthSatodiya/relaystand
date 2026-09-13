@@ -2,6 +2,13 @@
   "name": "relaystand",
   "version": "0.1.0",
   "private": true,
+  "description": "The standup that remembers yesterday — a daily standup tracker that carries unfinished work forward.",
+  "license": "Apache-2.0",
+  "author": "Parth Satodiya",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ParthSatodiya/relaystand.git"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
