@@ -42,6 +42,8 @@ next-env.d.ts
 
 # local SQLite database (and its -wal / -shm sidecars)
 /prisma/*.db*
+# a stray one at the root, if DATABASE_URL is ever pointed here
+/*.db*
 
 # keep the template
 !.env.example
