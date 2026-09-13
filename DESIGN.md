@@ -103,6 +103,17 @@ only takes a column if the team actually stood up on it.
   column, a quick add a person, and starting a day that was never held; title,
   comment, links, order, status and away all live in run mode, which a click on
   any person or bar opens.
+- **The date is the control.** The board's title *is* the stepper: arrows either
+  side, and pressing the date opens the day picker (`src/components/DayPicker.tsx`)
+  — our own, not the native one, because only ours can say which days the team
+  stood up on: a lime dot for held, coral when that day had something blocked, a
+  ring on today, future days disabled. `Today` is a small chip beside it, always
+  rendered and disabled on the day itself.
+- **The day's figures are the week's filter.** Finished, running and blocked are
+  three chips; pressing one narrows the grid. No chip pressed and every chip
+  pressed mean the same thing — show everything — so there is no separate clear
+  control. Excluded bars **fade rather than hide**, so rows keep their height and
+  nobody moves under the pointer.
 - **The arrows walk working days.** Back from Monday is Friday — unless the team
   actually stood up on that weekend, which makes it a stop in either direction,
   so the held days are read from both sides of the day on screen.

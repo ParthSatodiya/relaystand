@@ -11,6 +11,7 @@ import path from 'node:path';
 
 // Imported inside before(), after DATABASE_URL points at the throwaway file.
 type Lib = typeof import('@/lib/standup');
+type Days = typeof import('@/lib/days');
 type Links = typeof import('@/lib/links');
 type Access = typeof import('@/lib/access');
 type Emails = typeof import('@/lib/emails');
@@ -20,6 +21,7 @@ let startStandup: Lib['startStandup'];
 let loadWeek: Lib['loadWeek'];
 let weekColumns: Lib['weekColumns'];
 let stepDay: Lib['stepDay'];
+let monthGrid: Days['monthGrid'];
 let reopenItem: Lib['reopenItem'];
 let assignItem: Lib['assignItem'];
 let daysDragging: Lib['daysDragging'];
@@ -49,6 +51,7 @@ before(async () => {
   prisma = (await import('@/lib/db')).default;
   ({ startStandup, daysDragging, reopenItem, assignItem, loadWeek, weekColumns, stepDay } =
     await import('@/lib/standup'));
+  ({ monthGrid } = await import('@/lib/days'));
   ({ taskLink } = await import('@/lib/links'));
   ({ teamContext, requireTeamMember } = await import('@/lib/access'));
   ({ auditTeamFilter } = await import('@/lib/audit'));
@@ -498,4 +501,16 @@ test('the arrows can see a weekend standup that is still ahead of you', async ()
     SATURDAY,
     'forward from Friday must stop on the Saturday the team stood up'
   );
+});
+
+test('the picker month runs whole weeks, Monday to Sunday', () => {
+  // September 2026 starts on a Tuesday and ends on a Wednesday, so the grid
+  // has to reach back into August and forward into October to stay square.
+  const grid = monthGrid('2026-09-13');
+
+  assert.equal(grid.length, 35, 'five whole weeks');
+  assert.equal(grid[0], '2026-08-31', 'the Monday before the 1st');
+  assert.equal(grid[grid.length - 1], '2026-10-04', 'the Sunday after the 30th');
+  assert.equal(grid.length % 7, 0);
+  assert.ok(grid.includes('2026-09-01') && grid.includes('2026-09-30'), 'the month itself is whole');
 });

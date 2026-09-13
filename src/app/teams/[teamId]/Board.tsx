@@ -11,6 +11,7 @@ import { stepDay } from '@/lib/days';
 import { STALLED_DAYS, ui } from '@/lib/ui';
 import MemberSection, { type MemberRow } from '@/components/MemberSection';
 import WeekGrid, { type Week } from '@/components/WeekGrid';
+import DayPicker, { type StandupDay } from '@/components/DayPicker';
 import TabMark from '@/components/TabMark';
 
 interface BoardData {
@@ -23,23 +24,30 @@ const todayStr = () => format(new Date(), 'yyyy-MM-dd');
 
 export default function Board({
   teamId,
-  teamName,
   date,
   board,
   week,
+  days,
   doneLastStandup,
   me,
 }: {
   teamId: number;
-  teamName: string;
   date: string;
   board: BoardData | null;
   week: Week;
+  /** Every day this team has stood up — the dots in the picker. */
+  days: StandupDay[];
   doneLastStandup: Record<number, number>;
   me: { memberId: number; isLead: boolean; canWrite: boolean };
 }) {
   const router = useRouter();
   const { run, error, busy } = useRun();
+  const [picking, setPicking] = useState(false);
+  // Which statuses the week shows. None picked and all picked mean the same
+  // thing — show everything — so the chips need no separate clear control.
+  const [only, setOnly] = useState<string[]>([]);
+  const toggle = (status: string) =>
+    setOnly((now) => (now.includes(status) ? now.filter((s) => s !== status) : [...now, status]));
 
   const goto = (on: string) => router.push(`/teams/${teamId}?date=${on}`);
   // Arrows hop between days that actually have a standup — skips the gaps. The
@@ -57,85 +65,98 @@ export default function Board({
   const doneToday = items.filter((i) => i.status === 'done').length;
   const blockedToday = items.filter((i) => i.status === 'blocked').length;
   const running = items.length - doneToday - blockedToday;
-  const longestRun = items
-    .filter((i) => i.status !== 'done')
-    .reduce((worst, i) => Math.max(worst, i.daysDragging), 0);
 
   return (
     <div className="space-y-5">
       <TabMark alert={needsYou} />
 
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <p className="text-sm text-dim">{teamName}</p>
-          <h1 className={`${ui.h1} mt-0.5`}>{format(parseISO(date), 'EEEE d MMMM')}</h1>
-        </div>
-
-        {/* The day you are on, and the days either side that actually held one.
-            Today sits first and is always rendered — disabled rather than gone —
-            so the arrows and the date never move under the pointer. */}
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            onClick={() => goto(todayStr())}
-            disabled={isToday(parseISO(date))}
-            className={`${ui.btn} ${ui.btnSubtle} disabled:opacity-30`}
-          >
-            Today
-          </button>
+      <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
+        {/* One date, not two: the title steps, and pressing it opens the picker. */}
+        <div className="relative flex flex-wrap items-center gap-2.5">
           <button
             onClick={() => goto(shift(-1))}
             aria-label="Previous working day"
-            className={`${ui.btn} ${ui.btnGhost} px-2.5`}
+            className={`${ui.btn} ${ui.btnGhost} px-2`}
           >
             <ChevronLeft size={16} />
           </button>
-          <input
-            type="date"
-            aria-label="Standup date"
-            value={date}
-            onChange={(e) => e.target.value && goto(e.target.value)}
-            className={ui.input}
-          />
+          <button
+            onClick={() => setPicking((open) => !open)}
+            aria-expanded={picking}
+            aria-haspopup="dialog"
+            className={`${ui.h1} cursor-pointer border-b border-dashed pb-0.5 transition ${
+              picking ? 'border-baton text-baton' : 'border-chalk/35 hover:text-baton'
+            }`}
+          >
+            {format(parseISO(date), 'EEEE d MMMM')}
+          </button>
           <button
             onClick={() => goto(shift(1))}
             disabled={date >= todayStr()}
             aria-label="Next working day"
-            className={`${ui.btn} ${ui.btnGhost} px-2.5 disabled:opacity-30`}
+            className={`${ui.btn} ${ui.btnGhost} px-2 disabled:opacity-30`}
           >
             <ChevronRight size={16} />
           </button>
-        </div>
-      </div>
+          <button
+            onClick={() => goto(todayStr())}
+            disabled={isToday(parseISO(date))}
+            className="cursor-pointer rounded-full border border-line px-2.5 py-0.5 text-[11px] uppercase tracking-[0.11em] text-dim transition hover:border-baton hover:text-baton disabled:opacity-30 disabled:hover:border-line disabled:hover:text-dim"
+          >
+            Today
+          </button>
 
-      {/* The day in four numbers, before any of the detail. */}
-      {board && (
-        <dl className="grid grid-cols-2 border-y border-line sm:grid-cols-4">
+          {picking && (
+            <DayPicker
+              date={date}
+              today={todayStr()}
+              days={days}
+              onPick={(pick) => {
+                setPicking(false);
+                goto(pick);
+              }}
+              onClose={() => setPicking(false)}
+            />
+          )}
+        </div>
+
+        {/* The day's three figures, and the week's filter — the same control. */}
+        <div className="flex flex-wrap items-center gap-2">
           {[
-            { label: 'Running', value: running, tone: '' },
-            { label: 'Finished today', value: doneToday, tone: 'text-baton' },
+            { status: 'done', label: 'finished', count: doneToday, on: 'bg-baton text-baton-ink' },
+            { status: 'open', label: 'running', count: running, on: 'bg-chalk/12' },
             {
-              label: 'Blocked',
-              value: blockedToday,
-              tone: blockedToday ? 'text-stall' : '',
+              status: 'blocked',
+              label: 'blocked',
+              count: blockedToday,
+              on: 'border-stall bg-stall/10 text-chalk',
             },
-            {
-              label: 'Longest run',
-              value: longestRun ? `${longestRun}d` : '—',
-              tone: longestRun >= STALLED_DAYS ? 'text-stall' : '',
-            },
-          ].map((stat, i) => (
-            <div
-              key={stat.label}
-              className={`px-4 py-3.5 ${i > 0 ? 'border-l border-line-soft' : ''} ${
-                i === 2 ? 'border-l-0 sm:border-l' : ''
+          ].map((chip) => (
+            <button
+              key={chip.status}
+              onClick={() => toggle(chip.status)}
+              aria-pressed={only.includes(chip.status)}
+              disabled={!board}
+              title={`Show only ${chip.label}`}
+              className={`inline-flex cursor-pointer items-center gap-2 rounded-full border px-3 py-1 text-sm tabular-nums transition disabled:opacity-40 ${
+                only.includes(chip.status) ? chip.on : 'border-line text-dim hover:text-chalk'
               }`}
             >
-              <dt className={ui.label}>{stat.label}</dt>
-              <dd className={`display mt-1 text-3xl tabular-nums ${stat.tone}`}>{stat.value}</dd>
-            </div>
+              <span
+                aria-hidden="true"
+                className={`size-2 rounded-[2px] ${
+                  chip.status === 'done'
+                    ? 'bg-baton'
+                    : chip.status === 'blocked'
+                      ? 'hatch border border-stall'
+                      : 'bg-chalk/35'
+                }`}
+              />
+              <b className="font-semibold">{board ? chip.count : '—'}</b> {chip.label}
+            </button>
           ))}
-        </dl>
-      )}
+        </div>
+      </div>
 
       {error && (
         <p role="alert" className={ui.error}>
@@ -156,6 +177,7 @@ export default function Board({
           teamId={teamId}
           week={week}
           today={date}
+          only={only}
           standupId={board?.id ?? null}
           editable={me.canWrite}
           busy={busy}

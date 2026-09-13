@@ -194,6 +194,24 @@ export async function loadWeek(teamId: number, endDate: string, count = 5) {
   };
 }
 
+/**
+ * Every day this team has stood up, and whether anything on it was blocked —
+ * the dots in the board's day picker. Dates only, so a year of standups is a
+ * few kilobytes rather than a page of tasks.
+ */
+export async function standupDays(teamId: number, limit = 400) {
+  const rows = await prisma.standup.findMany({
+    where: { teamId },
+    orderBy: { date: 'desc' },
+    take: limit,
+    select: {
+      date: true,
+      items: { where: { status: 'blocked' }, select: { id: true }, take: 1 },
+    },
+  });
+  return rows.map((r) => ({ date: r.date, blocked: r.items.length > 0 }));
+}
+
 /** How many tasks each member finished on the standup before this date. */
 export async function doneCountsBefore(teamId: number, date: string) {
   const previous = await prisma.standup.findFirst({

@@ -46,6 +46,7 @@ export default function WeekGrid({
   teamId,
   week,
   today,
+  only,
   standupId,
   editable,
   busy,
@@ -54,6 +55,8 @@ export default function WeekGrid({
   teamId: number;
   week: Week;
   today: string;
+  /** Statuses the chips are showing. Empty, or all three, means everything. */
+  only: string[];
   /** Today's standup, when one has been started — what a quick add writes to. */
   standupId: number | null;
   editable: boolean;
@@ -61,6 +64,9 @@ export default function WeekGrid({
   run: (fn: () => Promise<unknown>) => Promise<void>;
 }) {
   const [addFor, setAddFor] = useState<number | null>(null);
+  // No chip pressed and every chip pressed say the same thing.
+  const filtering = only.length > 0 && only.length < 3;
+  const dimmed = (status: string) => filtering && !only.includes(status);
   // When the whole week is empty, saying so once a person is just noise.
   const anyWork = week.members.some((m) => m.bars.length > 0);
   const [title, setTitle] = useState('');
@@ -169,7 +175,9 @@ export default function WeekGrid({
                 <div
                   key={bar.id}
                   style={{ gridColumn: `${bar.from + 1} / ${bar.to + 2}` }}
-                  className="group/bar relative flex min-w-0 items-center"
+                  className={`group/bar relative flex min-w-0 items-center transition ${
+                    dimmed(bar.status) ? 'opacity-20' : ''
+                  }`}
                 >
                   <Link
                     href={`/teams/${teamId}/walkthrough?date=${bar.date}&member=${bar.memberId}`}

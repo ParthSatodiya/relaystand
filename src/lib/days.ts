@@ -5,11 +5,25 @@
  * Dates are `YYYY-MM-DD` strings at every boundary; the Date objects live and
  * die inside these functions.
  */
-import { addDays, format, getDay, parseISO, subDays } from 'date-fns';
+import { addDays, format, getDay, getDaysInMonth, parseISO, startOfMonth, subDays } from 'date-fns';
 
 /** A plain calendar step, in and out as `YYYY-MM-DD`. */
 export function shiftDays(date: string, days: number) {
   return format(addDays(parseISO(date), days), 'yyyy-MM-dd');
+}
+
+/**
+ * Whole weeks covering the month `date` falls in, Monday first — the shape the
+ * board's day picker draws. Days from the months either side ride along so the
+ * grid stays square; the caller greys them.
+ */
+export function monthGrid(date: string) {
+  const first = startOfMonth(parseISO(date));
+  // date-fns counts Sunday as 0; the picker starts on Monday.
+  const lead = (getDay(first) + 6) % 7;
+  const start = subDays(first, lead);
+  const weeks = Math.ceil((lead + getDaysInMonth(first)) / 7);
+  return Array.from({ length: weeks * 7 }, (_, i) => format(addDays(start, i), 'yyyy-MM-dd'));
 }
 
 /** Saturday and Sunday never take a column of their own. */
@@ -52,4 +66,3 @@ export function weekColumns(endDate: string, standupDates: Iterable<string>, cou
   }
   return columns.reverse();
 }
-
