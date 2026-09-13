@@ -14,6 +14,7 @@ type Lib = typeof import('@/lib/standup');
 type Links = typeof import('@/lib/links');
 type Access = typeof import('@/lib/access');
 type Emails = typeof import('@/lib/emails');
+type Audit = typeof import('@/lib/audit');
 let prisma: (typeof import('@/lib/db'))['default'];
 let startStandup: Lib['startStandup'];
 let reopenItem: Lib['reopenItem'];
@@ -22,6 +23,8 @@ let daysDragging: Lib['daysDragging'];
 let taskLink: Links['taskLink'];
 let teamContext: Access['teamContext'];
 let parseRecipients: Emails['parseRecipients'];
+let requireTeamMember: Access['requireTeamMember'];
+let auditTeamFilter: Audit['auditTeamFilter'];
 
 const dir = mkdtempSync(path.join(tmpdir(), 'standup-test-'));
 let team: { id: number };
@@ -43,7 +46,8 @@ before(async () => {
   prisma = (await import('@/lib/db')).default;
   ({ startStandup, daysDragging, reopenItem, assignItem } = await import('@/lib/standup'));
   ({ taskLink } = await import('@/lib/links'));
-  ({ teamContext } = await import('@/lib/access'));
+  ({ teamContext, requireTeamMember } = await import('@/lib/access'));
+  ({ auditTeamFilter } = await import('@/lib/audit'));
   ({ parseRecipients } = await import('@/lib/emails'));
 
   user = await prisma.user.create({ data: { email: 'lead@company.com', fullName: 'Lead' } });
@@ -320,4 +324,63 @@ test('a link chip is labelled from its provider', () => {
   assert.equal(taskLink(''), null);
   // Anything that is not http(s) never becomes an href.
   assert.equal(taskLink('javascript:alert(1)'), null);
+});
+
+test('a member id from the URL is only ever honoured on its own team', async () => {
+  // Anyone signed in can start an org and a team, which makes them a lead —
+  // so "is a lead" alone must never be enough to touch a member row.
+  const mallory = await prisma.user.create({
+    data: { email: 'mallory@evil.com', fullName: 'Mallory' },
+  });
+  const evilOrg = await prisma.org.create({
+    data: {
+      name: 'Evil',
+      slug: 'evil',
+      createdBy: mallory.id,
+      members: { create: { email: mallory.email, name: 'Mallory', role: 'admin', status: 'active' } },
+    },
+  });
+  const evilTeam = await prisma.team.create({
+    data: {
+      orgId: evilOrg.id,
+      name: 'Evil Team',
+      createdBy: mallory.id,
+      members: { create: { email: mallory.email, name: 'Mallory', role: 'lead' } },
+    },
+  });
+
+  // She is a genuine lead of her own team...
+  const ctx = await teamContext('mallory@evil.com', evilTeam.id);
+  assert.equal(ctx.isLead, true);
+
+  // ...which buys her nothing against a member id belonging to ours.
+  await assert.rejects(
+    () => requireTeamMember(evilTeam.id, asha.id),
+    /not on this team/,
+    'a lead must not reach another team’s member row by id'
+  );
+
+  // Her own member row still resolves, and Asha still resolves on her own team.
+  const mine = await requireTeamMember(team.id, asha.id);
+  assert.equal(mine.id, asha.id);
+  assert.equal(mine.isActive, true, 'the guard must not have touched the row');
+});
+
+test('the audit filter narrows to the teams you lead, and the URL cannot widen it', () => {
+  const led = [1, 2];
+
+  // A lead sees their own teams by default...
+  assert.deepEqual(auditTeamFilter(false, null, led), { teamId: { in: led } });
+  // ...may narrow to one of them...
+  assert.deepEqual(auditTeamFilter(false, 2, led), { teamId: 2 });
+  // ...and an id they do not lead falls back, it never replaces the restriction.
+  assert.deepEqual(
+    auditTeamFilter(false, 7, led),
+    { teamId: { in: led } },
+    'a ?teamId= outside your teams must not widen the query'
+  );
+
+  // An admin sees the whole org, or one team of it.
+  assert.deepEqual(auditTeamFilter(true, null, []), {});
+  assert.deepEqual(auditTeamFilter(true, 7, []), { teamId: 7 });
 });

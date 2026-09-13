@@ -70,3 +70,17 @@ export async function logEvent(event: {
     },
   });
 }
+
+/**
+ * Which teams' events a reader may see, as one Prisma clause.
+ *
+ * Computed once on purpose: spreading the permission restriction and then the
+ * `?teamId=` from the URL into the same `where` puts the same key twice, and
+ * the later spread wins — the URL would quietly replace the restriction rather
+ * than narrow it. An id outside what you lead falls back to your own teams, the
+ * same way a bad date falls back to the default range.
+ */
+export function auditTeamFilter(isAdmin: boolean, teamId: number | null, ledIds: number[]) {
+  if (isAdmin) return teamId ? { teamId } : {};
+  return { teamId: teamId && ledIds.includes(teamId) ? teamId : { in: ledIds } };
+}

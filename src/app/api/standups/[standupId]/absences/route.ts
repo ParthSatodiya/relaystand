@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db';
 import { errorResponse, HttpError, parseId, requireStandupAccess } from '@/lib/perms';
+import { requireTeamMember } from '@/lib/access';
 
 interface Context {
   params: Promise<{ standupId: string }>;
@@ -10,7 +11,7 @@ interface Context {
 export async function PUT(req: NextRequest, context: Context) {
   try {
     const standupId = parseId((await context.params).standupId, 'standup ID');
-    const { member, isLead } = await requireStandupAccess(standupId);
+    const { standup, member, isLead } = await requireStandupAccess(standupId);
 
     const { memberId, absent } = await req.json();
     const targetId = Number(memberId);
@@ -20,6 +21,8 @@ export async function PUT(req: NextRequest, context: Context) {
     if (!isLead && targetId !== member?.id) {
       throw new HttpError(403, 'You can only mark yourself away');
     }
+
+    await requireTeamMember(standup.teamId, targetId);
 
     if (absent) {
       await prisma.absence.upsert({

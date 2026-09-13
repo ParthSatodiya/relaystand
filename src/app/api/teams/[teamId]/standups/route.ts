@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { errorResponse, parseId, requireMembership } from '@/lib/perms';
+import { errorResponse, HttpError, parseId, requireMembership } from '@/lib/perms';
 import { requireDate, startStandup, today } from '@/lib/standup';
 
 interface Context {
@@ -10,7 +10,9 @@ interface Context {
 export async function POST(req: NextRequest, context: Context) {
   try {
     const teamId = parseId((await context.params).teamId, 'team ID');
-    const { user } = await requireMembership(teamId);
+    const { user, canWrite } = await requireMembership(teamId);
+    // Starting a day writes items for the whole team — not an observer's job.
+    if (!canWrite) throw new HttpError(403, 'Observers can only read this board');
 
     const body = await req.json().catch(() => ({}));
     const date = requireDate(body.date ?? today());

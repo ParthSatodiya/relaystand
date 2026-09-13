@@ -3,6 +3,7 @@ import { Prisma } from '@prisma/client';
 import prisma from '@/lib/db';
 import { logEvent } from '@/lib/audit';
 import { errorResponse, HttpError, parseId, requireLead } from '@/lib/perms';
+import { requireTeamMember } from '@/lib/access';
 
 interface Context {
   params: Promise<{ teamId: string; memberId: string }>;
@@ -17,8 +18,7 @@ export async function PUT(req: NextRequest, context: Context) {
     const memberId = parseId(params.memberId, 'member ID');
     const { user, team, member: me } = await requireLead(teamId);
 
-    const existing = await prisma.teamMember.findFirst({ where: { id: memberId, teamId } });
-    if (!existing) throw new HttpError(404, 'That member is not on this team');
+    const existing = await requireTeamMember(teamId, memberId);
 
     // The email is the identity: changing it would hand this person's history
     // to somebody else. Deactivate and add the new address instead.
@@ -86,6 +86,8 @@ export async function DELETE(_req: NextRequest, context: Context) {
     const memberId = parseId(params.memberId, 'member ID');
     const { user, team, member: me } = await requireLead(teamId);
 
+    const existing = await requireTeamMember(teamId, memberId);
+
     if (memberId === me?.id) {
       const leads = await prisma.teamMember.count({
         where: { teamId, role: 'lead', isActive: true },
@@ -99,7 +101,7 @@ export async function DELETE(_req: NextRequest, context: Context) {
     }
 
     const removed = await prisma.teamMember.update({
-      where: { id: memberId },
+      where: { id: existing.id },
       data: { isActive: false },
     });
     await logEvent({

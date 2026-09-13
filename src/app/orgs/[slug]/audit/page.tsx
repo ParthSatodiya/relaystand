@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation';
 import { addDays, format } from 'date-fns';
 import prisma from '@/lib/db';
 import { pageOrg } from '@/lib/page';
-import { AUDIT_ACTIONS, type AuditAction } from '@/lib/audit';
+import { AUDIT_ACTIONS, auditTeamFilter, type AuditAction } from '@/lib/audit';
 import { dateParam, today } from '@/lib/standup';
 import AppHeader from '@/components/AppHeader';
 import AuditLog from './AuditLog';
@@ -34,11 +34,12 @@ export default async function AuditPage({
   const teamId = q.teamId ? Number(q.teamId) : null;
   const action = q.action && q.action in AUDIT_ACTIONS ? (q.action as AuditAction) : null;
 
+  const teamFilter = auditTeamFilter(ctx.isAdmin, teamId, ledIds);
+
   const events = await prisma.auditEvent.findMany({
     where: {
       orgId: ctx.org.id,
-      ...(ctx.isAdmin ? {} : { teamId: { in: ledIds } }),
-      ...(teamId ? { teamId } : {}),
+      ...teamFilter,
       ...(action ? { action } : {}),
       // Dates are YYYY-MM-DD strings everywhere else; the log is a timestamp,
       // so the range is inclusive of the whole "to" day.

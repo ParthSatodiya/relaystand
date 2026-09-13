@@ -41,3 +41,14 @@ export async function teamContext(email: string, teamId: number) {
     canWrite: isAdmin || (!!member && member.role !== 'observer'),
   };
 }
+
+/**
+ * The member row named by a URL segment or a request body, but only if it
+ * really is on this team. Being a lead of team A says nothing about who a
+ * given member id belongs to — ids are sequential across every org.
+ */
+export async function requireTeamMember(teamId: number, memberId: number) {
+  const member = await prisma.teamMember.findFirst({ where: { id: memberId, teamId } });
+  if (!member) throw new HttpError(404, 'That member is not on this team');
+  return member;
+}
