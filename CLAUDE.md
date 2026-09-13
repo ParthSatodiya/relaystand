@@ -49,7 +49,8 @@ reports range is `?from=&to=&memberId=`. Navigation re-renders on the server.
 | `src/auth.ts` | Auth.js config. JWT sessions, no Prisma adapter — `signIn` upserts the `User` row by email. Providers are only registered when their env vars exist. |
 | `src/lib/perms.ts` | **Every API route's authorization.** `requireMembership`, `requireLead`, `requireItemAccess`, `requireStandupAccess`. Throws `HttpError`, which `errorResponse` turns into a status code. |
 | `src/lib/page.ts` | The same checks for server components — redirects or returns `null` instead of throwing. |
-| `src/lib/standup.ts` | `loadBoard` (read a day) and `startStandup` (create a day + carry forward). The date helpers live here too. |
+| `src/lib/standup.ts` | `loadBoard` (read a day), `loadWeek` (the five-working-day grid, stitching carry-forward chains into one bar a task) and `startStandup` (create a day + carry forward). The date helpers live here too. |
+| `src/components/MemberSection.tsx` | One person's rows and every edit on them. The board stacks one a person below `md`; run mode shows the one person. Never duplicate this. |
 | `src/lib/reports.ts` | `buildReport`, `listTeams`. |
 | `src/app/api/**` | Mutations only. Every GET a page can do itself was deleted. |
 

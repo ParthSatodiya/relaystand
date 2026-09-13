@@ -9,24 +9,7 @@ import { useRun } from '@/lib/useRun';
 import type { LinkRow } from '@/lib/links';
 import { daysTone, initials, ui } from '@/lib/ui';
 import LinkChips from '@/components/LinkChips';
-
-interface Item {
-  id: number;
-  title: string;
-  links: LinkRow[];
-  comment: string;
-  status: string;
-  carriedFromId: number | null;
-  daysDragging: number;
-}
-
-interface MemberRow {
-  memberId: number;
-  memberName: string;
-  role: string;
-  isAbsent: boolean;
-  items: Item[];
-}
+import MemberSection, { AbsenceToggle, type MemberRow } from '@/components/MemberSection';
 
 interface BoardData {
   id: number;
@@ -83,12 +66,15 @@ export default function Walkthrough({
   const members = board?.members ?? [];
   const { run, error, busy } = useRun();
   const [at, setAt] = useState(() =>
-    Math.max(0, members.findIndex((m) => m.memberId === startMemberId))
+    Math.max(
+      0,
+      members.findIndex((m) => m.memberId === startMemberId),
+    ),
   );
 
   const step = useCallback(
     (dir: -1 | 1) => setAt((i) => Math.min(Math.max(i + dir, 0), members.length - 1)),
-    [members.length]
+    [members.length],
   );
 
   // Arrow keys, because this gets driven from across the room.
@@ -191,7 +177,7 @@ export default function Walkthrough({
                 longest run{' '}
                 <b
                   className={`font-semibold ${daysTone(
-                    Math.max(...member.items.map((i) => i.daysDragging))
+                    Math.max(...member.items.map((i) => i.daysDragging)),
                   )}`}
                 >
                   {Math.max(...member.items.map((i) => i.daysDragging))}d
@@ -205,6 +191,17 @@ export default function Walkthrough({
             {doneToday}/{member.items.length}
           </p>
           <p className="mt-1 text-xs uppercase tracking-[0.12em] text-dim">done today</p>
+          {editable && (
+            <span className="mt-2 flex justify-end">
+              <AbsenceToggle
+                standupId={board.id}
+                memberId={member.memberId}
+                absent={member.isAbsent}
+                busy={busy}
+                run={run}
+              />
+            </span>
+          )}
         </div>
       </div>
 
@@ -235,7 +232,7 @@ export default function Walkthrough({
                               run(() =>
                                 api(`/api/standups/${board.id}/items/${item.id}/reopen`, {
                                   method: 'POST',
-                                })
+                                }),
                               )
                             }
                             title="Put this task back on today's plan"
@@ -254,55 +251,20 @@ export default function Walkthrough({
         </section>
 
         <section>
-          <div className="flex items-baseline justify-between gap-3 border-b border-line-soft pb-2.5">
-            <h3 className={ui.h2}>Today</h3>
-            <p className="text-xs text-dim tabular-nums">
-              {member.items.length} {member.items.length === 1 ? 'task' : 'tasks'}
-            </p>
-          </div>
-          {member.items.length === 0 ? (
-            <p className="mt-3 text-[15px] text-dim">
-              {member.isAbsent ? 'On leave.' : 'No tasks yet.'}
-            </p>
-          ) : (
-            <ul>
-              {member.items.map((item) => (
-                <li key={item.id} className="border-b border-line-soft py-3.5">
-                  <div className="flex flex-wrap items-center gap-2.5">
-                    <span
-                      className={`text-lg leading-snug ${
-                        item.status === 'done' ? 'text-dim line-through decoration-baton' : ''
-                      }`}
-                    >
-                      {item.title}
-                    </span>
-                    <LinkChips links={item.links} />
-                    {item.carriedFromId !== null && (
-                      <span className={`text-xs tabular-nums ${daysTone(item.daysDragging)}`}>
-                        carried {item.daysDragging}d
-                      </span>
-                    )}
-                    <span
-                      className={`ml-auto text-xs uppercase tracking-[0.09em] ${
-                        item.status === 'done'
-                          ? 'text-baton'
-                          : item.status === 'blocked'
-                            ? 'text-stall'
-                            : 'text-dim'
-                      }`}
-                    >
-                      {item.status === 'open' ? 'running' : item.status}
-                    </span>
-                  </div>
-                  {item.comment && (
-                    <p className="mt-1.5 max-w-[60ch] text-sm leading-relaxed text-dim">
-                      {item.comment}
-                    </p>
-                  )}
-                </li>
-              ))}
-            </ul>
-          )}
+          {/* The same rows the board draws, so a task is edited in one place:
+              title, comment, links, order, status, delete. */}
+          <MemberSection
+            teamId={teamId}
+            date={date}
+            member={member}
+            roster={members.filter((m) => m.isActive)}
+            standupId={board.id}
+            editable={editable}
+            busy={busy}
+            run={run}
+            doneLastStandup={0}
+            hideHeader
+          />
         </section>
       </div>
 

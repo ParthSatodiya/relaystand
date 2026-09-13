@@ -17,6 +17,8 @@ type Emails = typeof import('@/lib/emails');
 type Audit = typeof import('@/lib/audit');
 let prisma: (typeof import('@/lib/db'))['default'];
 let startStandup: Lib['startStandup'];
+let loadWeek: Lib['loadWeek'];
+let weekColumns: Lib['weekColumns'];
 let reopenItem: Lib['reopenItem'];
 let assignItem: Lib['assignItem'];
 let daysDragging: Lib['daysDragging'];
@@ -44,7 +46,9 @@ before(async () => {
   execFileSync('npx', ['prisma', 'migrate', 'deploy'], { env: process.env, stdio: 'pipe' });
 
   prisma = (await import('@/lib/db')).default;
-  ({ startStandup, daysDragging, reopenItem, assignItem } = await import('@/lib/standup'));
+  ({ startStandup, daysDragging, reopenItem, assignItem, loadWeek, weekColumns } = await import(
+    '@/lib/standup'
+  ));
   ({ taskLink } = await import('@/lib/links'));
   ({ teamContext, requireTeamMember } = await import('@/lib/access'));
   ({ auditTeamFilter } = await import('@/lib/audit'));
@@ -383,4 +387,63 @@ test('the audit filter narrows to the teams you lead, and the URL cannot widen i
   // An admin sees the whole org, or one team of it.
   assert.deepEqual(auditTeamFilter(true, null, []), {});
   assert.deepEqual(auditTeamFilter(true, 7, []), { teamId: 7 });
+});
+
+test('the week grid skips weekends but keeps a weekend that held a standup', () => {
+  // Monday 2026-03-02 back: Fri 27, Thu 26 … Saturday and Sunday take no column.
+  assert.deepEqual(weekColumns(MON, []), [
+    '2026-02-24',
+    '2026-02-25',
+    '2026-02-26',
+    '2026-02-27',
+    MON,
+  ]);
+
+  // Unless the team actually stood up on one.
+  assert.deepEqual(weekColumns(MON, ['2026-02-28']), [
+    '2026-02-25',
+    '2026-02-26',
+    '2026-02-27',
+    '2026-02-28',
+    MON,
+  ]);
+});
+
+test('the week grid draws one bar a task, spanning the days it has been running', async () => {
+  const week = await loadWeek(team.id, THU);
+
+  assert.deepEqual(
+    week.columns.map((c) => c.date),
+    ['2026-02-27', MON, TUE, WED, THU],
+    'five working days ending on the date asked for'
+  );
+  assert.deepEqual(
+    week.columns.map((c) => c.held),
+    [false, true, false, true, true],
+    'the skipped Tuesday is a column, just not a held one'
+  );
+
+  const blocker = week.members
+    .flatMap((m) => m.bars)
+    .find((b) => b.title === 'Waiting on infra')!;
+  assert.equal(blocker.from, 1, 'the bar starts on Monday, the day it first appeared');
+  assert.equal(blocker.to, 4, 'and runs to Thursday, where it is still unfinished');
+  assert.equal(blocker.startsBefore, false, 'nothing of it sits before the window');
+  assert.equal(blocker.daysDragging, 3, 'counted from Monday, not from the day before');
+
+  // Three rows of the same task across three standups collapse into one bar.
+  const bars = week.members.flatMap((m) => m.bars).filter((b) => b.title === 'Waiting on infra');
+  assert.equal(bars.length, 1);
+});
+
+test('a task carried in from before the window says so rather than starting at the edge', async () => {
+  const week = await loadWeek(team.id, THU, 2); // Wed and Thu only
+  assert.deepEqual(week.columns.map((c) => c.date), [WED, THU]);
+
+  const blocker = week.members
+    .flatMap((m) => m.bars)
+    .find((b) => b.title === 'Waiting on infra')!;
+  assert.equal(blocker.from, 0);
+  assert.equal(blocker.startsBefore, true, 'its Monday row is outside this window');
+  assert.equal(blocker.daysDragging, 3, 'the age still counts from Monday');
 });

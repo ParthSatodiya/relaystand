@@ -87,6 +87,26 @@ blocked    ▨▨▨▨▨▨▨▨▨▨▨▨        .hatch + stall border, re
 - The same three shapes appear on the board, the reports, the team list and the
   org picker. A person should learn them once.
 
+### The week grid
+
+The board's desk view (`src/components/WeekGrid.tsx`, fed by `loadWeek`): one row
+a person, one bar a task, drawn across the last five **working** days. A weekend
+only takes a column if the team actually stood up on it.
+
+- Columns carry three states: held (plain), **today** (`bg-baton/8`), and no
+  standup held (`bg-chalk/4`, labelled under the date). Weekends are simply
+  absent rather than greyed, so five columns always mean five days of work.
+- Carry-forward writes a new row a day, so bars are stitched back together by
+  following `carriedFromId` inside the window. A task older than the window keeps
+  a `warn` left edge instead of pretending it began at the first column.
+- The grid is for reading. The only edit on it is finishing a task on today's
+  column, plus a quick add a person; title, comment, links, order, status and
+  away all live in run mode, which a click on any person or bar opens.
+- A bar's title truncates; the full title and its comment ride in the `title`
+  attribute, so hovering tells you the rest.
+- Below `md` the grid is hidden and the day's list takes over — five columns on a
+  phone is unreadable, and a lead on a phone wants today, not the week.
+
 ### The tab mark
 
 The favicon is the lane, and it carries one bit: **does this board need someone.**
