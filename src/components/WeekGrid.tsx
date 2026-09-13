@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { format, parseISO } from 'date-fns';
-import { Check, Plus, X } from 'lucide-react';
+import { Check, Play, Plus, X } from 'lucide-react';
 import { api } from '@/lib/api';
 import { daysTone, initials, ui } from '@/lib/ui';
 
@@ -81,7 +81,28 @@ export default function WeekGrid({
     <div className="overflow-x-auto">
       <div className="min-w-[720px]">
         <div className="grid items-end" style={track}>
-          <span />
+          {/* Press play to walk the team from the top; each row starts on that
+              person, which is what a lead reaches for when someone must leave. */}
+          <span className="flex items-center pb-2">
+            {last.held ? (
+              <Link
+                href={`/teams/${teamId}/walkthrough?date=${last.date}`}
+                title="Walk the team through this day"
+                aria-label="Walk the team through this day"
+                className="grid size-7 place-items-center rounded-full bg-baton text-baton-ink transition hover:brightness-105 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-baton"
+              >
+                <Play size={13} />
+              </Link>
+            ) : (
+              <span
+                aria-hidden="true"
+                title="No standup on this day yet"
+                className="grid size-7 place-items-center rounded-full border border-line text-dim"
+              >
+                <Play size={13} />
+              </span>
+            )}
+          </span>
           {week.columns.map((col) => (
             <div
               key={col.date}
@@ -102,12 +123,30 @@ export default function WeekGrid({
             style={track}
           >
             <div className="flex items-center gap-2.5 py-3 pr-3">
-              <span
-                aria-hidden="true"
-                className="display grid size-8 shrink-0 place-items-center rounded bg-chalk/12 text-sm text-dim"
-              >
-                {initials(member.memberName)}
-              </span>
+              {last.held ? (
+                <Link
+                  href={`/teams/${teamId}/walkthrough?date=${last.date}&member=${member.memberId}`}
+                  title={`Start the walkthrough on ${member.memberName}`}
+                  aria-label={`Start the walkthrough on ${member.memberName}`}
+                  className="group/play relative grid size-8 shrink-0 place-items-center rounded bg-chalk/12 text-sm text-dim transition hover:bg-baton hover:text-baton-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-baton"
+                >
+                  <span aria-hidden="true" className="display group-hover/play:opacity-0">
+                    {initials(member.memberName)}
+                  </span>
+                  <Play
+                    size={13}
+                    aria-hidden="true"
+                    className="absolute opacity-0 transition group-hover/play:opacity-100"
+                  />
+                </Link>
+              ) : (
+                <span
+                  aria-hidden="true"
+                  className="display grid size-8 shrink-0 place-items-center rounded bg-chalk/12 text-sm text-dim"
+                >
+                  {initials(member.memberName)}
+                </span>
+              )}
               <span className="min-w-0">
                 <Link
                   href={`/teams/${teamId}/walkthrough?date=${last.date}&member=${member.memberId}`}

@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { format, isToday, parseISO } from 'date-fns';
-import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Play, Plus } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useRun } from '@/lib/useRun';
 import { stepDay } from '@/lib/days';
@@ -155,6 +155,26 @@ export default function Board({
               <b className="font-semibold">{board ? chip.count : '—'}</b> {chip.label}
             </button>
           ))}
+
+          {/* Running the standup is the thing this screen is for at 9:30, so it
+              is the one baton control here. Rendered even when the day has no
+              standup — disabled, so the chips beside it never move. */}
+          {board ? (
+            <Link
+              href={`/teams/${teamId}/walkthrough?date=${date}`}
+              className={`${ui.btn} ${ui.btnPrimary} ml-1`}
+            >
+              <Play size={15} /> Run standup
+            </Link>
+          ) : (
+            <span
+              aria-disabled="true"
+              title="Start the standup first"
+              className={`${ui.btn} ml-1 cursor-not-allowed border border-line text-dim`}
+            >
+              <Play size={15} /> Run standup
+            </span>
+          )}
         </div>
       </div>
 

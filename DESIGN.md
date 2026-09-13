@@ -109,6 +109,11 @@ only takes a column if the team actually stood up on it.
   stood up on: a lime dot for held, coral when that day had something blocked, a
   ring on today, future days disabled. `Today` is a small chip beside it, always
   rendered and disabled on the day itself.
+- **Run standup is the board's one baton control.** A primary button beside the
+  day's figures starts at the top; the ▶ in the grid's person column does the
+  same, and each person's mark turns into a ▶ to start on them — what a lead
+  reaches for when someone has to leave early. On a day with no standup both go
+  outlined and dim rather than faded: dimming a baton fill turns it olive.
 - **The day's figures are the week's filter.** Finished, running and blocked are
   three chips; pressing one narrows the grid. No chip pressed and every chip
   pressed mean the same thing — show everything — so there is no separate clear
@@ -259,13 +264,13 @@ Two rows, and the second only exists inside a team:
 - **Row one** — wordmark, organisation switcher, team switcher, then the signed-in
   email and sign out on the right. Both switchers are native `<details>`: they
   open, close and take keyboard focus without client JavaScript.
-- **Row two** — the team's pages (Board, Reports, Members, How it works) with the
-  current one underlined in baton, and the date stepper on the right. Arrows hop
-  to the previous or next day that **actually had a standup**, and grey out when
-  there is none.
+- **Row two** — the team's *places*: Board, Reports, Members. Nothing else goes
+  here. Running the standup is an action that belongs to a day, so it lives on
+  the board beside that day, not in a row of management pages.
 
-Counts on tabs (Board 9, Members 6) are for scanning; a `stall` dot appears only
-when something is blocked or a request is waiting.
+A count on a tab is data about the page, not part of its name: it sits in its own
+chip (`bg-chalk/10`, baton-tinted on the open tab) and turns `stall` when
+something on that page is blocked. Never append a bare number to a label.
 
 ## Writing
 
