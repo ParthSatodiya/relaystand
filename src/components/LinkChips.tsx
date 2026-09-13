@@ -22,7 +22,7 @@ export default function LinkChips({ links }: { links: LinkRow[] }) {
         target="_blank"
         rel="noreferrer"
         title={link.url}
-        className={`shrink-0 rounded border px-1.5 py-0.5 font-mono text-[11px] tracking-tight transition ${chipTone[link.kind]}`}
+        className={`shrink-0 rounded border px-1.5 py-0.5 font-mono text-xs tracking-tight transition ${chipTone[link.kind]}`}
       >
         {link.label}
       </a>

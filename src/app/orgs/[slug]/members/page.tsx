@@ -12,7 +12,7 @@ export default async function OrgPeoplePage({ params }: { params: Promise<{ slug
   return (
     <>
       <AppHeader email={ctx.user.email} org={ctx.org} isAdmin={ctx.isAdmin} />
-      <main className="mx-auto max-w-4xl px-4 py-6">
+      <main id="main" className="mx-auto max-w-4xl px-4 py-6">
         <OrgPeople
           slug={ctx.org.slug}
           orgName={ctx.org.name}

@@ -13,23 +13,25 @@ export const ui = {
   btnSubtle: 'text-dim hover:bg-chalk/8 hover:text-chalk disabled:opacity-40',
   btnDanger: 'border border-line text-dim hover:border-stall hover:text-stall disabled:opacity-40',
   // block: an inline label flows onto the same line as a narrow input
-  label: 'block text-[11px] font-medium uppercase tracking-[0.13em] text-dim',
+  label: 'block text-xs font-medium uppercase tracking-[0.13em] text-dim',
   error: 'rounded border border-stall border-l-4 bg-stall/10 px-3 py-2 text-sm text-chalk',
   empty: 'rounded-md border border-dashed border-line p-10 text-center',
   /** Page and section headings. Anton, uppercase — never for running text. */
   h1: 'display text-3xl sm:text-4xl',
   h2: 'display text-sm tracking-[0.11em]',
   /**
-   * A control that lives inside a row and gets out of the way on hover-capable
-   * screens. Stays put below `sm`, where there is no hover to reveal it.
-   * Put it on the control itself; the row needs `group`.
+   * A control that lives inside a row and gets out of the way. Hidden only
+   * where a pointer can bring it back — see `.row-action` in globals.css,
+   * which gates on `(hover: hover)`, not on width. Put it on the control
+   * itself; the row needs `group`.
    */
-  rowAction:
-    'opacity-100 transition sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100 sm:focus-visible:opacity-100',
+  rowAction: 'row-action transition',
 } as const;
 
-// text-dim is 4.9:1 on the track ground — the lightest text colour allowed.
-// Anything fainter is decoration (rules, lane grounds), never words.
+// Measured against the grounds text actually sits on: text-dim is 6.83:1 on
+// track and 5.84:1 on raised (cards, menus, the header) — the lightest text
+// colour allowed. Anything fainter is decoration (rules, lane grounds), never
+// words.
 
 export const statusPill: Record<string, string> = {
   open: 'border-line text-dim',
@@ -46,7 +48,7 @@ export const statusLabel: Record<string, string> = {
 
 /** Shape of a status pill; `statusPill[status]` supplies the colours. */
 export const pill =
-  'rounded-full border px-2.5 py-0.5 text-[11px] uppercase tracking-[0.09em] whitespace-nowrap';
+  'rounded-full border px-2.5 py-0.5 text-xs uppercase tracking-[0.09em] whitespace-nowrap';
 
 /** A task goes amber once it has dragged this long — one threshold, one place. */
 export const DRAGGING_DAYS = 3;

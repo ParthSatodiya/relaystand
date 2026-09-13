@@ -14,6 +14,7 @@
   --color-baton: #c9f24a; /* the accent: finished work, current page, primary action */
   --color-baton-ink: #0d2540; /* text on a baton fill */
   --color-stall: #ff6f5e; /* blocked, destructive, errors */
+  --color-stall-ink: #0d2540; /* text on a stall fill — 5.67:1, its own role */
   --color-warn: #f5b93f; /* dragging too long, away, waiting */
 
   --font-sans: var(--font-barlow), ui-sans-serif, system-ui, sans-serif;
@@ -43,6 +44,39 @@ body {
     rgba(255, 111, 94, 0.26) 0 7px,
     rgba(255, 111, 94, 0.08) 7px 14px
   );
+}
+
+/*
+ * A row control that gets out of the way — but only where there is a pointer
+ * that can bring it back. Width is not the question: a tablet is wide and has
+ * no hover, so gating this on `sm:` hid Edit and Delete behind nothing.
+ */
+@media (hover: hover) {
+  .row-action {
+    opacity: 0;
+  }
+  .group:hover .row-action,
+  .group:focus-within .row-action,
+  .row-action:focus-visible {
+    opacity: 1;
+  }
+}
+
+/* Motion is opt-in. Colour and opacity changes still land, just instantly. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* The skip link lands here; keep the heading clear of the sticky header. */
+#main {
+  scroll-margin-top: 1rem;
 }
 
 ::-webkit-scrollbar {

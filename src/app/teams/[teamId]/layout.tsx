@@ -24,7 +24,7 @@ export default async function TeamLayout({
     return (
       <>
         <AppHeader email={user.email} />
-        <main className="mx-auto max-w-6xl px-4 py-6">{children}</main>
+        <main id="main" className="mx-auto max-w-6xl px-4 py-6">{children}</main>
       </>
     );
   }
@@ -53,7 +53,7 @@ export default async function TeamLayout({
         memberCount={memberCount}
         blocked={!!standup?.items.some((i) => i.status === 'blocked')}
       />
-      <main className="mx-auto max-w-6xl px-4 py-6">{children}</main>
+      <main id="main" className="mx-auto max-w-6xl px-4 py-6">{children}</main>
     </>
   );
 }

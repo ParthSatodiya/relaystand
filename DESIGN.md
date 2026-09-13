@@ -22,11 +22,12 @@ palette name (`gray-200`, `indigo-600`) in a component, stop — use a token.
 | `raised` | `#123152` | Anything on the ground: cards, inputs, menus, the header. |
 | `line` | `rgba(233,243,255,.16)` | Borders you are meant to see: cards, inputs, buttons. |
 | `line-soft` | `rgba(233,243,255,.07)` | Rules between rows in a list or table. |
-| `chalk` | `#e9f3ff` | Text. 13.8:1 on `track`. |
-| `dim` | `#8fb0cd` | Secondary text. 4.9:1 on `track` — the lightest text allowed, at any size. |
+| `chalk` | `#e9f3ff` | Text. 13.81:1 on `track`, 11.80:1 on `raised`. |
+| `dim` | `#8fb0cd` | Secondary text. 6.83:1 on `track`, 5.84:1 on `raised` — the lightest text allowed, at any size. |
 | `baton` | `#c9f24a` | The accent: finished work, the page you are on, the primary action. |
 | `baton-ink` | `#0d2540` | Text sitting on a `baton` fill. Never `chalk` on `baton`. |
 | `stall` | `#ff6f5e` | Blocked, destructive, errors. |
+| `stall-ink` | `#0d2540` | Text sitting on a `stall` fill. 5.67:1. Never borrow `baton-ink` for this. |
 | `warn` | `#f5b93f` | Dragging, away, waiting on someone. |
 
 Rules:

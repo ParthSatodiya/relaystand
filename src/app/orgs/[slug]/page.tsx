@@ -14,7 +14,7 @@ export default async function OrgHome({ params }: { params: Promise<{ slug: stri
   return (
     <>
       <AppHeader email={ctx.user.email} org={ctx.org} isAdmin={ctx.isAdmin} />
-      <main className="mx-auto max-w-6xl px-4 py-6">
+      <main id="main" className="mx-auto max-w-6xl px-4 py-6">
         <TeamList orgId={ctx.org.id} orgName={ctx.org.name} teams={teams} today={todayStr} />
       </main>
     </>

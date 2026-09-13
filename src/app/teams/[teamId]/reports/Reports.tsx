@@ -178,7 +178,7 @@ export default function Reports({
                 <div className="min-w-0">
                   <p className="truncate font-semibold">{row.memberName}</p>
                   {!row.isActive && (
-                    <p className="text-[11px] uppercase tracking-[0.12em] text-dim">removed</p>
+                    <p className="text-xs uppercase tracking-[0.12em] text-dim">removed</p>
                   )}
                 </div>
 
@@ -324,7 +324,7 @@ export default function Reports({
                   <span className="text-sm text-dim">No tasks.</span>
                 )}
                 {day.absent && (
-                  <span className="text-[11px] uppercase tracking-[0.12em] text-dim">On leave</span>
+                  <span className="text-xs uppercase tracking-[0.12em] text-dim">On leave</span>
                 )}
               </div>
             </div>

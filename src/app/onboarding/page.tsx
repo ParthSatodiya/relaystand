@@ -14,7 +14,7 @@ export default async function OnboardingPage() {
   return (
     <>
       <AppHeader email={user.email} />
-      <main className="mx-auto max-w-xl px-4 py-8">
+      <main id="main" className="mx-auto max-w-xl px-4 py-8">
         <Onboarding
           firstTime={orgs.length === 0}
           pending={pending.map((o) => ({ name: o.name, slug: o.slug }))}

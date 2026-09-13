@@ -183,7 +183,7 @@ export default function Walkthrough({
         </span>
         <div className="min-w-0">
           <h2 className="display text-3xl sm:text-4xl">{member.memberName}</h2>
-          <p className="mt-1.5 flex flex-wrap gap-x-4 text-[11px] uppercase tracking-[0.12em] text-dim">
+          <p className="mt-1.5 flex flex-wrap gap-x-4 text-xs uppercase tracking-[0.12em] text-dim">
             <span>{member.role === 'lead' ? 'Lead' : 'Dev'}</span>
             {member.isAbsent && <span className="text-warn">On leave</span>}
             {member.items.some((i) => i.carriedFromId !== null) && (
@@ -204,7 +204,7 @@ export default function Walkthrough({
           <p className="display text-4xl tabular-nums">
             {doneToday}/{member.items.length}
           </p>
-          <p className="mt-1 text-[11px] uppercase tracking-[0.12em] text-dim">done today</p>
+          <p className="mt-1 text-xs uppercase tracking-[0.12em] text-dim">done today</p>
         </div>
       </div>
 
@@ -283,7 +283,7 @@ export default function Walkthrough({
                       </span>
                     )}
                     <span
-                      className={`ml-auto text-[11px] uppercase tracking-[0.09em] ${
+                      className={`ml-auto text-xs uppercase tracking-[0.09em] ${
                         item.status === 'done'
                           ? 'text-baton'
                           : item.status === 'blocked'

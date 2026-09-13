@@ -141,7 +141,7 @@ export default function TeamList({
                       {team.name}
                     </h2>
                     {team.myRole === 'lead' && (
-                      <span className="text-[11px] uppercase tracking-[0.12em] text-dim">lead</span>
+                      <span className="text-xs uppercase tracking-[0.12em] text-dim">lead</span>
                     )}
                   </Link>
                   <p className="mt-1 text-sm text-dim">
@@ -195,7 +195,7 @@ export default function TeamList({
                       <p className="display text-xl tabular-nums">
                         {format(new Date(s.heldAt), 'HH:mm')}
                       </p>
-                      <p className="mt-1 text-[11px] uppercase tracking-[0.12em] text-dim">
+                      <p className="mt-1 text-xs uppercase tracking-[0.12em] text-dim">
                         Standup held
                       </p>
                     </>

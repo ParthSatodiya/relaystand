@@ -33,7 +33,7 @@ export default async function LoginPage() {
   if (await currentUser()) redirect('/teams');
 
   return (
-    <main className="mx-auto flex min-h-full max-w-5xl items-center px-5 py-12">
+    <main id="main" className="mx-auto flex min-h-full max-w-5xl items-center px-5 py-12">
       <div className="grid w-full items-center gap-10 md:grid-cols-[1.1fr_0.9fr] md:gap-14">
         <div>
           <h1 className="display text-5xl leading-[0.9] sm:text-6xl">

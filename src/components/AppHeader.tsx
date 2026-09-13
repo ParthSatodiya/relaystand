@@ -40,7 +40,15 @@ export default async function AppHeader({
       : [];
 
   return (
-    <header className="border-b border-line bg-raised">
+    <header className="relative border-b border-line bg-raised">
+      {/* Up to eight links here and four more in the team tabs, on every page.
+          The first Tab should be able to jump the lot. */}
+      <a
+        href="#main"
+        className="sr-only rounded bg-baton text-sm font-semibold text-baton-ink focus:not-sr-only focus:absolute focus:top-3 focus:left-4 focus:z-50 focus:px-3 focus:py-2"
+      >
+        Skip to content
+      </a>
       <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-3 gap-y-2 px-4 py-3">
         <Link href="/orgs" className="display shrink-0 text-lg">
           Relay<span className="text-baton">Stand</span>

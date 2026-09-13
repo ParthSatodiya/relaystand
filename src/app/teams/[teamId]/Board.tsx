@@ -21,7 +21,16 @@ import {
 import { api } from '@/lib/api';
 import { useRun } from '@/lib/useRun';
 import { MAX_LINKS, type LinkRow } from '@/lib/links';
-import { daysTone, initials, laneWidth, pill, STALLED_DAYS, statusPill, ui } from '@/lib/ui';
+import {
+  daysTone,
+  initials,
+  laneWidth,
+  pill,
+  STALLED_DAYS,
+  statusLabel,
+  statusPill,
+  ui,
+} from '@/lib/ui';
 import LinkChips from '@/components/LinkChips';
 import TabMark from '@/components/TabMark';
 
@@ -204,7 +213,11 @@ export default function Board({
             editable={me.canWrite}
           />
 
-          <div className="space-y-4">
+          {/* One person to the next is the strongest boundary on this screen,
+              so it gets the most space: 8 + 32 + 12 = 52px, against the 24px
+              between two of one person's tasks. Under space-y-4 it was 36px —
+              only 1.5x — and the split was carried by line weight instead. */}
+          <div className="space-y-8">
             {board.members.map((member) => (
               <MemberSection
                 key={member.memberId}
@@ -350,7 +363,9 @@ function MemberSection({
 
   return (
     <section className="border-b border-line pb-2">
-      <header className="flex flex-wrap items-center justify-between gap-2 py-3">
+      {/* pb-2, not py-3: a name should sit closer to its own tasks than two of
+          those tasks sit to each other. 20px here against 24px between rows. */}
+      <header className="flex flex-wrap items-center justify-between gap-2 pt-3 pb-2">
         {/* The identity block is the link, not the whole card — the rest of the
             card is buttons, inputs and drag targets. */}
         <Link
@@ -370,17 +385,17 @@ function MemberSection({
                 {member.memberName}
               </h2>
               {member.role === 'lead' && (
-                <span className="rounded-full bg-chalk/10 px-1.5 py-0.5 text-[11px] font-medium uppercase tracking-wide text-chalk">
+                <span className="rounded-full bg-chalk/10 px-1.5 py-0.5 text-xs font-medium uppercase tracking-wide text-chalk">
                   lead
                 </span>
               )}
               {!member.isActive && (
-                <span className="rounded-full bg-chalk/10 px-1.5 py-0.5 text-[11px] uppercase tracking-wide text-dim">
+                <span className="rounded-full bg-chalk/10 px-1.5 py-0.5 text-xs uppercase tracking-wide text-dim">
                   removed
                 </span>
               )}
               {member.isAbsent && (
-                <span className="rounded-full bg-warn/15 px-1.5 py-0.5 text-[11px] uppercase tracking-wide text-warn">
+                <span className="rounded-full bg-warn/15 px-1.5 py-0.5 text-xs uppercase tracking-wide text-warn">
                   on leave
                 </span>
               )}
@@ -701,10 +716,16 @@ function ItemRow({
           <LinkChips links={item.links} />
           {item.carriedFromId !== null && (
             <span
-              title={`Carried forward — first raised ${item.daysDragging} day(s) ago`}
               className={`rounded px-1.5 py-0.5 text-xs tabular-nums ${daysTone(item.daysDragging)}`}
             >
-              {item.daysDragging}d
+              <span aria-hidden="true">{item.daysDragging}d</span>
+              {/* The badge reads "3d". What it means belongs somewhere a
+                  keyboard or touch user can actually reach — a title attribute
+                  is neither. */}
+              <span className="sr-only">
+                Carried forward — first raised {item.daysDragging}{' '}
+                {item.daysDragging === 1 ? 'day' : 'days'} ago
+              </span>
             </span>
           )}
         </div>
@@ -735,7 +756,10 @@ function ItemRow({
                 title={label}
                 aria-label={label}
                 aria-pressed={item.status === value}
-                disabled={busy || item.status === value}
+                // Not disabled when it is the current status: that would drop
+                // the one button carrying aria-pressed out of the tab order,
+                // so a keyboard user could never hear which status is set.
+                disabled={busy}
                 onClick={() =>
                   run(() => api(url, { method: 'PUT', body: JSON.stringify({ status: value }) }))
                 }
@@ -766,7 +790,7 @@ function ItemRow({
                   setConfirming(false);
                   run(() => api(url, { method: 'DELETE' }));
                 }}
-                className="rounded bg-stall px-2 py-1 text-baton-ink transition hover:brightness-105"
+                className="rounded bg-stall px-2 py-1 text-stall-ink transition hover:brightness-105"
               >
                 Delete
               </button>
@@ -791,9 +815,7 @@ function ItemRow({
           )}
         </div>
       ) : (
-        <span className={`${pill} ${statusPill[item.status]}`}>
-          {item.status}
-        </span>
+        <span className={`${pill} ${statusPill[item.status]}`}>{statusLabel[item.status]}</span>
       )}
     </li>
   );
