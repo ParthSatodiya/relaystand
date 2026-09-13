@@ -1,0 +1,19 @@
+services:
+  relaystand:
+    build: .
+    container_name: relaystand
+    restart: unless-stopped
+    ports:
+      - '3000:3000'
+    env_file:
+      - .env
+    environment:
+      # Always the volume path inside the container, whatever .env says.
+      DATABASE_URL: file:/data/relaystand.db
+      # Uploads share the volume, so a rebuild never loses a logo.
+      UPLOAD_DIR: /data/uploads
+    volumes:
+      - relaystand-data:/data
+
+volumes:
+  relaystand-data:
