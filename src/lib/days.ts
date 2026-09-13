@@ -7,6 +7,11 @@
  */
 import { addDays, format, getDay, parseISO, subDays } from 'date-fns';
 
+/** A plain calendar step, in and out as `YYYY-MM-DD`. */
+export function shiftDays(date: string, days: number) {
+  return format(addDays(parseISO(date), days), 'yyyy-MM-dd');
+}
+
 /** Saturday and Sunday never take a column of their own. */
 export function isWeekend(date: string) {
   const day = getDay(parseISO(date));

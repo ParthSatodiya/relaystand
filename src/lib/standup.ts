@@ -1,5 +1,5 @@
 import { differenceInCalendarDays, format, parseISO } from 'date-fns';
-import { isWeekend, stepDay, weekColumns } from '@/lib/days';
+import { isWeekend, shiftDays, stepDay, weekColumns } from '@/lib/days';
 
 // Re-exported so the server side has one import for a standup's world.
 export { stepDay, weekColumns };
@@ -103,15 +103,17 @@ export async function loadBoard(teamId: number, date: string) {
  * the left edge rather than lying about when the task began.
  */
 export async function loadWeek(teamId: number, endDate: string, count = 5) {
-  const recent = await prisma.standup.findMany({
-    where: { teamId, date: { lte: endDate } },
+  // Days either side, not just behind: the arrows step forward too, and a
+  // weekend standup ahead of you is a stop they have to be able to see.
+  const nearby = await prisma.standup.findMany({
+    where: { teamId, date: { gte: shiftDays(endDate, -30), lte: shiftDays(endDate, 30) } },
     orderBy: { date: 'desc' },
-    take: 20,
     select: { date: true },
   });
+  const heldDates = nearby.map((r) => r.date);
   const columns = weekColumns(
     endDate,
-    recent.map((r) => r.date),
+    heldDates.filter((date) => date <= endDate),
     count,
   );
 
@@ -175,9 +177,9 @@ export async function loadWeek(teamId: number, endDate: string, count = 5) {
 
   return {
     columns: columns.map((date) => ({ date, held: heldOn.has(date), weekend: isWeekend(date) })),
-    // For the arrows: the recent days that held one, so a step can stop on a
-    // weekend the team actually worked.
-    heldDates: recent.map((r) => r.date),
+    // For the arrows: the days either side that held one, so a step can stop on
+    // a weekend the team actually worked.
+    heldDates,
     members: members
       .map((member) => ({
         memberId: member.id,

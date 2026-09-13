@@ -481,3 +481,21 @@ test('the arrows walk working days, and stop on a weekend that held a standup', 
   // And an ordinary weekday step is just the next day.
   assert.equal(stepDay('2026-03-04', -1, []), '2026-03-03');
 });
+
+test('the arrows can see a weekend standup that is still ahead of you', async () => {
+  // Saturday after the week being viewed, with work on it.
+  const SATURDAY = '2026-03-07';
+  await prisma.standup.create({
+    data: { teamId: team.id, date: SATURDAY, createdBy: user.id },
+  });
+
+  // Standing on the Friday, pressing forward: the held Saturday is ahead of the
+  // window, which is exactly where the board used to stop being able to see it.
+  const FRIDAY = '2026-03-06';
+  const week = await loadWeek(team.id, FRIDAY);
+  assert.equal(
+    stepDay(FRIDAY, 1, week.heldDates),
+    SATURDAY,
+    'forward from Friday must stop on the Saturday the team stood up'
+  );
+});

@@ -104,7 +104,11 @@ only takes a column if the team actually stood up on it.
   comment, links, order, status and away all live in run mode, which a click on
   any person or bar opens.
 - **The arrows walk working days.** Back from Monday is Friday — unless the team
-  actually stood up on that weekend, which makes it a stop. The day you are
+  actually stood up on that weekend, which makes it a stop in either direction,
+  so the held days are read from both sides of the day on screen.
+- **Today sits left of the arrows and is always there**, disabled on the day
+  itself. A control that disappears moves everything beside it, and the date
+  field should not travel under the pointer between two clicks. The day you are
   viewing always earns a column, weekend or not, so picking a Saturday from the
   date field is how you start a weekend standup.
 - A day with no standup carries **+ Start** in its own column, in the row under

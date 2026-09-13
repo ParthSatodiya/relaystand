@@ -71,8 +71,17 @@ export default function Board({
           <h1 className={`${ui.h1} mt-0.5`}>{format(parseISO(date), 'EEEE d MMMM')}</h1>
         </div>
 
-        {/* The day you are on, and the days either side that actually held one. */}
+        {/* The day you are on, and the days either side that actually held one.
+            Today sits first and is always rendered — disabled rather than gone —
+            so the arrows and the date never move under the pointer. */}
         <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={() => goto(todayStr())}
+            disabled={isToday(parseISO(date))}
+            className={`${ui.btn} ${ui.btnSubtle} disabled:opacity-30`}
+          >
+            Today
+          </button>
           <button
             onClick={() => goto(shift(-1))}
             aria-label="Previous working day"
@@ -95,11 +104,6 @@ export default function Board({
           >
             <ChevronRight size={16} />
           </button>
-          {!isToday(parseISO(date)) && (
-            <button onClick={() => goto(todayStr())} className={`${ui.btn} ${ui.btnSubtle}`}>
-              Today
-            </button>
-          )}
         </div>
       </div>
 
