@@ -87,4 +87,20 @@ docker compose up -d --build
 Copy `.env.example` to `.env` and fill it before first run. Without an OAuth
 provider configured, `/login` says so instead of breaking.
 
+## Agent skills
+
+### Issue tracker
+
+Issues and specs live as markdown files under `.scratch/<feature-slug>/`, not on
+GitHub. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+The five canonical triage roles, unchanged. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: `CONTEXT.md` and `docs/adr/` at the repo root. See
+`docs/agents/domain.md`.
+
 @AGENTS.md
