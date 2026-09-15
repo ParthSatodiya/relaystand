@@ -29,8 +29,13 @@ function ProviderMark({ id }: { id: string }) {
 const label = (id: string, name: string) =>
   id === 'microsoft-entra-id' ? 'Microsoft' : name;
 
-export default async function LoginPage() {
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ denied?: string }>;
+}) {
   if (await currentUser()) redirect('/teams');
+  const denied = (await searchParams).denied === '1';
 
   return (
     <main id="main" className="mx-auto flex min-h-full max-w-5xl items-center px-5 py-12">
@@ -67,6 +72,13 @@ export default async function LoginPage() {
           <p className="mt-2 text-sm text-dim">
             Use the work account your team already has. We match you by email.
           </p>
+
+          {denied && (
+            <p role="alert" className={`${ui.error} mt-4`}>
+              That account is not on this server&apos;s list. Ask whoever runs it to add your
+              address, then sign in again.
+            </p>
+          )}
 
           <div className="mt-5 space-y-2.5">
             {enabledProviders.map((provider, i) => (

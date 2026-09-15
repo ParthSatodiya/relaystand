@@ -15,6 +15,12 @@ finished what.
 - **Reports** — completions per developer over a range, average days to done,
   and the tasks that have been dragging longest.
 
+<!-- GIF SLOT — docs/media/week-grid.gif
+     The board at rest. See docs/media/README.md for the size rules. -->
+
+Built for a team lead who already has Jira or Linear and does not want a second
+tracker. **[What it is for, and the scenarios it was built around →](docs/use-cases.md)**
+
 ## Requirements
 
 Node 26+, and a Google or Microsoft (Entra ID) OAuth app for sign-in.
@@ -70,6 +76,27 @@ docker compose up -d --build
 must be registered with Google/Microsoft. Migrations run automatically on
 container start. `DATABASE_URL` is forced to the volume path — leave it alone in
 compose.
+
+### Decide who can sign in
+
+Do this before the server is reachable from anywhere but your laptop.
+
+A Google or Entra app in its usual "any account" mode authenticates *anybody*,
+and anyone who signs in can create their own organisation on your server.
+Joining an existing organisation always needs an admin's approval, so your data
+stays yours — but with nothing set, strangers can sign up and squat.
+
+```shell
+AUTH_ALLOWED_DOMAINS="acme.com, acme.co.uk"   # your work domains
+AUTH_ALLOWED_EMAILS="contractor@gmail.com"    # or named addresses, or both
+```
+
+Matches are exact — `acme.com` does not admit `mail.acme.com`. Leave both empty
+and sign-in is open; the server logs a warning at boot saying so. A refused
+account gets told to ask you, not a blank error.
+
+[SECURITY.md](SECURITY.md) has the rest: what the app stores, TLS, backups, and
+the limits we already know about.
 
 To put it behind Nginx, proxy to port 3000 and pass through `Host`,
 `X-Forwarded-Proto`, and `X-Forwarded-Host`.

@@ -55,5 +55,6 @@ hard-code a hex or a Tailwind palette name in a component.
 
 ## Reporting a security issue
 
-Please do not open a public issue. Email the maintainer and give it a few days
-before disclosing.
+Please do not open a public issue. See [SECURITY.md](SECURITY.md) — it has the
+private reporting link, what the app stores, and the limits we already know
+about.

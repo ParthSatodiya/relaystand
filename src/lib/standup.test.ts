@@ -514,3 +514,46 @@ test('the picker month runs whole weeks, Monday to Sunday', () => {
   assert.equal(grid.length % 7, 0);
   assert.ok(grid.includes('2026-09-01') && grid.includes('2026-09-30'), 'the month itself is whole');
 });
+
+test('the sign-in allowlist decides who gets an account at all', async () => {
+  const { signUpAllowed, signUpIsOpen } = await import('@/lib/signup');
+  const saved = [process.env.AUTH_ALLOWED_DOMAINS, process.env.AUTH_ALLOWED_EMAILS] as const;
+  const set = (d?: string, e?: string) => {
+    if (d === undefined) delete process.env.AUTH_ALLOWED_DOMAINS;
+    else process.env.AUTH_ALLOWED_DOMAINS = d;
+    if (e === undefined) delete process.env.AUTH_ALLOWED_EMAILS;
+    else process.env.AUTH_ALLOWED_EMAILS = e;
+  };
+
+  // Nothing configured: open, and the app says so out loud at boot.
+  set(undefined, undefined);
+  assert.equal(signUpIsOpen(), true);
+  assert.equal(signUpAllowed('stranger@gmail.com'), true, 'the documented default is open');
+
+  // A domain list closes it. Exact match only — no subdomains, no lookalikes.
+  set('acme.com, acme.co.uk');
+  assert.equal(signUpIsOpen(), false);
+  assert.equal(signUpAllowed('asha@acme.com'), true);
+  assert.equal(signUpAllowed('ASHA@ACME.COM'), true, 'case is not a way in or out');
+  assert.equal(signUpAllowed('bo@acme.co.uk'), true);
+  assert.equal(signUpAllowed('mallory@evil-acme.com'), false, 'a lookalike domain is not acme');
+  assert.equal(signUpAllowed('mallory@mail.acme.com'), false, 'a subdomain is not the domain');
+  assert.equal(signUpAllowed('mallory@gmail.com'), false);
+
+  // Individual addresses, for a team that has no domain of its own.
+  set(undefined, 'asha@gmail.com bo@gmail.com');
+  assert.equal(signUpAllowed('asha@gmail.com'), true);
+  assert.equal(signUpAllowed('mallory@gmail.com'), false, 'same domain, not on the list');
+
+  // Both lists apply together.
+  set('acme.com', 'contractor@gmail.com');
+  assert.equal(signUpAllowed('asha@acme.com'), true);
+  assert.equal(signUpAllowed('contractor@gmail.com'), true);
+  assert.equal(signUpAllowed('mallory@gmail.com'), false);
+
+  // Nothing that is not an address gets through a closed list.
+  assert.equal(signUpAllowed(''), false);
+  assert.equal(signUpAllowed('not-an-address'), false);
+
+  set(saved[0], saved[1]);
+});
