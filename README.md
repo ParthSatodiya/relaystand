@@ -15,8 +15,9 @@ finished what.
 - **Reports** — completions per developer over a range, average days to done,
   and the tasks that have been dragging longest.
 
-<!-- GIF SLOT — docs/media/week-grid.gif
-     The board at rest. See docs/media/README.md for the size rules. -->
+![A team's week: one row per developer, one bar per task, bar length is days
+running. The hatched red bar is blocked and has run all
+week.](docs/media/week-grid.gif)
 
 Built for a team lead who already has Jira or Linear and does not want a second
 tracker. **[What it is for, and the scenarios it was built around →](docs/use-cases.md)**
@@ -61,7 +62,8 @@ into `AUTH_MICROSOFT_ENTRA_ID_ID`, `AUTH_MICROSOFT_ENTRA_ID_SECRET`, and set
 3. **Members** → add each developer by name and **work email**. That email is
    how they are matched when they sign in; until then you enter their tasks for
    them.
-4. Back on the board, press **Start standup**.
+4. Back on the board, press **+ Start** in today's column (**Start standup** on
+   a phone).
 
 ## Deploying
 

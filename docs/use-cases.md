@@ -2,9 +2,10 @@
 
 The tour. If you only want to install it, the [README](../README.md) is enough.
 
-<!-- GIF SLOT 1 — docs/media/week-grid.gif
-     The board at rest: five working days, a few bars running across them, one
-     going amber. ~6s, no cursor wandering. This is the money shot. -->
+![The Payments team's week, Monday to Friday. Each bar is a task and its length
+is how many days that task has been running; the hatched red one is blocked and
+has run all five. Pressing the "blocked" chip dims everything
+else.](media/week-grid.gif)
 
 ## The problem it solves
 
@@ -32,14 +33,16 @@ tempted to plan work in it, plan it in your tracker and paste the link.
 
 ## The daily loop
 
-**Morning, before the meeting.** Open the board. If today has no standup yet,
-press **Start standup**. Every unfinished task from the last standup you held
-comes across — with its original date intact, so a task raised on Monday still
-says Monday on Thursday.
+**Morning, before the meeting.** Open the board. A day with no standup yet shows
+**+ Start** in its column — on a phone, where the week grid would be five
+unreadable columns, it is a **Start standup** button under the day's list
+instead. Either way, every unfinished task from the last standup you held comes
+across, with its original date intact, so a task raised on Monday still says
+Monday on Thursday.
 
-<!-- GIF SLOT 2 — docs/media/start-standup.gif
-     Empty day → press Start standup → yesterday's unfinished rows appear, the
-     day counters already showing 2d, 3d. ~5s. Shows carry-forward in one go. -->
+![Monday's column is empty and offers "+ Start". Pressing it fills the column
+with every unfinished task from Friday, each already counting its age — 7d on the
+blocked one, 4d and 5d on two others.](media/start-standup.gif)
 
 **During the meeting.** Press **Run standup**. It gives you one person at a
 time, arrow keys to move between them, and a timer running in the corner so a
@@ -101,9 +104,9 @@ a standup carry a dot, so finding last Tuesday's is one click rather than a
 guess. The status chips above the week filter it — press **Blocked** to see only
 what was stuck.
 
-<!-- GIF SLOT 3 — docs/media/reports.gif
-     Reports: per-person figures, then "still running, oldest first" with a
-     red 7d at the top. ~5s. Shows the payoff of everything above. -->
+![Reports over one week: finished count, average days to done and longest run
+per person, then every still-running task oldest first — the blocked four-day one
+at the top with its Jira number beside it.](media/reports.gif)
 
 ## Who can do what
 

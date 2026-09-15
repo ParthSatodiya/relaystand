@@ -20,6 +20,13 @@ it.
 - **Use seeded, plausible data.** Real names and real ticket numbers are a leak.
   Invent a team.
 
+## Where the content comes from
+
+All three were recorded against `npm run seed:demo` — a fictional Northwind
+payments team, a fixed week in September 2026. Use it rather than your own data:
+the week never drifts with the clock, and nobody's real ticket numbers end up in
+a public repo.
+
 ## Making one small enough
 
 Record to video, then convert — recording straight to GIF gives you a 20 MB

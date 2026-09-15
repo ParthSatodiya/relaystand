@@ -39,6 +39,27 @@ These are load-bearing. A change that violates one will look fine and be wrong.
   `router.refresh()`. There are no `useEffect` data loads, and there should
   stay none.
 
+## Demo data
+
+```shell
+npm run seed:demo      # builds prisma/demo.db — a fictional team, one week
+```
+
+An invented company with four people and a week of standups, including a task
+blocked since Monday and someone off on the Wednesday. It writes to
+`prisma/demo.db`, never to your `dev.db`, and refuses to run against any
+database whose path does not say `demo`.
+
+It is what the GIFs in `docs/media/` were recorded from, so re-record against it
+and the screens stay consistent. Point the dev server at it with:
+
+```shell
+DATABASE_URL="file:./prisma/demo.db" npm run dev
+```
+
+You will still need an OAuth provider to sign in — seeding does not give you a
+session.
+
 ## Touching the UI
 
 Read [DESIGN.md](DESIGN.md) first. Colour and font tokens live in
