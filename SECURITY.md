@@ -66,6 +66,20 @@ Pass through `Host`, `X-Forwarded-Proto` and `X-Forwarded-Host`.
 `relaystand-data` volume. Losing it loses the history, and a ransomware-shaped
 bad day is a security problem too.
 
+## Demo mode
+
+`npm run demo` adds a password-less sign-in button. It requires **both**
+`DEMO_MODE=1` and a non-production `NODE_ENV`, so a production build cannot
+enable it whatever the environment says — the provider is never registered, the
+callback answers `error=Configuration`, and no session is issued. Verified, and
+`npm test` pins the gate.
+
+It signs in as a user that already exists and creates nobody, so the sign-in
+allowlist has nothing to decide and is skipped for that provider only.
+
+Do not run `next dev` with `DEMO_MODE=1` on a reachable host. The banner in the
+log says so every boot.
+
 ## Known limits
 
 Stated plainly rather than discovered by surprise:

@@ -15,7 +15,8 @@
     "start": "next start",
     "lint": "eslint",
     "test": "tsx --test src/lib/standup.test.ts",
-    "seed:demo": "DATABASE_URL=\"file:./prisma/demo.db\" prisma migrate deploy && DATABASE_URL=\"file:./prisma/demo.db\" node scripts/seed-demo.mjs"
+    "seed:demo": "DATABASE_URL=\"file:./prisma/demo.db\" prisma migrate deploy && DATABASE_URL=\"file:./prisma/demo.db\" node scripts/seed-demo.mjs",
+    "demo": "npm run seed:demo && DATABASE_URL=\"file:./prisma/demo.db\" DEMO_MODE=1 next dev"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "7.10.0",

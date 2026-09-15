@@ -557,3 +557,37 @@ test('the sign-in allowlist decides who gets an account at all', async () => {
 
   set(saved[0], saved[1]);
 });
+
+test('demo mode cannot be switched on in a production build', async () => {
+  const { demoMode } = await import('@/lib/signup');
+  const saved = [process.env.DEMO_MODE, process.env.NODE_ENV] as const;
+  const set = (demo?: string, env?: string) => {
+    if (demo === undefined) delete process.env.DEMO_MODE;
+    else process.env.DEMO_MODE = demo;
+    // NODE_ENV is readonly in the types but plain data at runtime.
+    if (env === undefined) delete (process.env as Record<string, string | undefined>).NODE_ENV;
+    else (process.env as Record<string, string | undefined>).NODE_ENV = env;
+  };
+
+  set(undefined, 'development');
+  assert.equal(demoMode(), false, 'off unless asked for');
+
+  set('1', 'development');
+  assert.equal(demoMode(), true);
+
+  set('1', 'test');
+  assert.equal(demoMode(), true, 'any non-production build may demo');
+
+  // The one that matters. A production build — the Docker image, next start —
+  // must refuse no matter what the environment says.
+  set('1', 'production');
+  assert.equal(demoMode(), false, 'DEMO_MODE=1 must not survive a production build');
+
+  // And nothing truthy-adjacent counts as asking for it.
+  for (const v of ['true', 'yes', '0', '', 'TRUE', '2']) {
+    set(v, 'development');
+    assert.equal(demoMode(), false, `DEMO_MODE=${JSON.stringify(v)} is not "1"`);
+  }
+
+  set(saved[0], saved[1]);
+});

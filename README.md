@@ -22,9 +22,25 @@ week.](docs/media/week-grid.gif)
 Built for a team lead who already has Jira or Linear and does not want a second
 tracker. **[What it is for, and the scenarios it was built around →](docs/use-cases.md)**
 
+## See it in 30 seconds
+
+```shell
+npm install
+npm run demo          # http://localhost:3000 → "Explore the demo team"
+```
+
+No OAuth app, no `.env`, no account. It seeds a throwaway `prisma/demo.db` with
+an invented team and a week of standups behind it, and puts a password-less
+sign-in button on the login page. Change anything you like.
+
+Demo mode is local only: it needs `DEMO_MODE=1`, and it refuses to switch on
+under `NODE_ENV=production`, so it cannot exist in the Docker image or any real
+build. `npm test` pins that.
+
 ## Requirements
 
-Node 26+, and a Google or Microsoft (Entra ID) OAuth app for sign-in.
+Node 26+, and a Google or Microsoft (Entra ID) OAuth app for sign-in — except
+for `npm run demo`, which needs neither.
 
 ## Local setup
 

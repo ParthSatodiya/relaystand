@@ -5,6 +5,14 @@ import { ui } from '@/lib/ui';
 
 /** Brand glyphs. Google rides on the baton fill, so its mark is drawn in ink. */
 function ProviderMark({ id }: { id: string }) {
+  // Not a brand — the local demo switch. A play triangle, in the text colour.
+  if (id === 'demo') {
+    return (
+      <svg width="15" height="15" viewBox="0 0 16 16" aria-hidden="true" fill="currentColor">
+        <path d="M4.5 2.8v10.4a.6.6 0 0 0 .92.5l8.2-5.2a.6.6 0 0 0 0-1l-8.2-5.2a.6.6 0 0 0-.92.5z" />
+      </svg>
+    );
+  }
   if (id === 'google') {
     return (
       <svg width="17" height="17" viewBox="0 0 18 18" aria-hidden="true" fill="currentColor">
@@ -28,6 +36,8 @@ function ProviderMark({ id }: { id: string }) {
 /** What people call it, not what the provider calls itself. */
 const label = (id: string, name: string) =>
   id === 'microsoft-entra-id' ? 'Microsoft' : name;
+
+const isDemo = (id: string) => id === 'demo';
 
 export default async function LoginPage({
   searchParams,
@@ -96,8 +106,16 @@ export default async function LoginPage({
                   }`}
                 >
                   <ProviderMark id={provider.id} />
-                  Continue with {label(provider.id, provider.name)}
+                  {isDemo(provider.id)
+                    ? 'Explore the demo team'
+                    : `Continue with ${label(provider.id, provider.name)}`}
                 </button>
+                {isDemo(provider.id) && (
+                  <p className="mt-1.5 text-xs text-dim">
+                    No password, no account. A made-up team with a week of standups behind it —
+                    change anything you like, it is a throwaway database.
+                  </p>
+                )}
               </form>
             ))}
 

@@ -51,14 +51,16 @@ blocked since Monday and someone off on the Wednesday. It writes to
 database whose path does not say `demo`.
 
 It is what the GIFs in `docs/media/` were recorded from, so re-record against it
-and the screens stay consistent. Point the dev server at it with:
+and the screens stay consistent.
 
 ```shell
-DATABASE_URL="file:./prisma/demo.db" npm run dev
+npm run demo          # seeds it, then serves it with a password-less sign-in
 ```
 
-You will still need an OAuth provider to sign in — seeding does not give you a
-session.
+`npm run demo` is `seed:demo` plus `DEMO_MODE=1`, which adds a Credentials
+provider that signs you in as the seeded lead. It is gated on
+`NODE_ENV !== 'production'` as well, so it cannot reach a real build — see
+`demoMode()` in `src/lib/signup.ts`, and the test that pins it.
 
 ## Touching the UI
 

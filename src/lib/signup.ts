@@ -43,6 +43,19 @@ export function signUpAllowed(email: string) {
   return emails.includes(addr) || domains.includes(domainOf(addr));
 }
 
+/**
+ * Demo mode: a password-less "sign in as the demo lead" button, so somebody can
+ * see the product without registering an OAuth app first.
+ *
+ * Two conditions, both required, and the second is not one an operator can talk
+ * themselves past. A production build — the Docker image, `next start`, anything
+ * with NODE_ENV=production — cannot turn this on at all, whatever DEMO_MODE
+ * says. It is a local-demo switch, not a deployment mode.
+ */
+export function demoMode() {
+  return process.env.DEMO_MODE === '1' && process.env.NODE_ENV !== 'production';
+}
+
 /** True when this deployment lets anyone in. Used for the one-time boot warning. */
 export function signUpIsOpen() {
   return (
