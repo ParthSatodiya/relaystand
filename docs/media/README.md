@@ -14,8 +14,10 @@ it.
   irritating. One idea per file.
 - **Name it for what it shows**, not where it goes: `week-grid.gif`, not
   `readme-1.gif`.
-- **No cursor wandering, no hunting for a menu.** Rehearse the click path, then
-  record it clean.
+- **Show the pointer, and move it deliberately.** Without a visible cursor the
+  interface looks like it changes on its own — the first take of these three
+  had that problem. Travel to the control, click, let the result land. No
+  wandering, no hunting for a menu: rehearse the path, then record it clean.
 - **1280×800 or narrower.** Wider is wasted — GitHub renders it at ~850px.
 - **Use seeded, plausible data.** Real names and real ticket numbers are a leak.
   Invent a team.
