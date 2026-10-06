@@ -66,6 +66,21 @@ Pass through `Host`, `X-Forwarded-Proto` and `X-Forwarded-Host`.
 `relaystand-data` volume. Losing it loses the history, and a ransomware-shaped
 bad day is a security problem too.
 
+```shell
+docker compose exec relaystand node scripts/backup.mjs /data/backups
+```
+
+That is SQLite's own `VACUUM INTO` — a consistent copy taken while the app keeps
+serving, which `cp` on a live database is not. Copy the result off the host;
+a backup sitting on the disk you are protecting against is not a backup.
+Uploaded logos are files under `UPLOAD_DIR`, not rows, so they need the same
+treatment.
+
+Restoring one means stopping the app, putting the file back, and **deleting the
+`-wal` and `-shm` sidecars** — a stale pair beside a restored database makes the
+next open fail outright with `database disk image is malformed`. The exact
+commands are in [README.md](README.md#restoring).
+
 ## Demo mode
 
 `npm run demo` adds a password-less sign-in button. It requires **both**
@@ -88,6 +103,11 @@ Stated plainly rather than discovered by surprise:
   expose port 3000 to the internet directly.
 - **No rate limiting** on any route, including sign-in. Put it in the proxy if
   you are internet-facing.
+- **An org admin can export the whole organisation** from Settings, in one
+  click. That is deliberate — your data is yours — but it means an admin
+  account is a bulk-egress account. The export is written to the audit log
+  every time. There is no matching import, on purpose: an importer writes
+  `OrgMember` rows, which would walk straight around the sign-in allowlist.
 - **Removal is a soft delete.** Deactivating a member keeps their name, email
   and task history so past standups still read correctly. There is no
   self-service account deletion; an operator must edit the database.

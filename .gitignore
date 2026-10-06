@@ -48,6 +48,9 @@ next-env.d.ts
 # keep the template
 !.env.example
 
+# database snapshots from `npm run backup`
+/backups/
+
 # uploaded files (local storage backend)
 /data/uploads/
 

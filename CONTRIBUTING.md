@@ -11,6 +11,7 @@ npm run dev            # http://localhost:3000
 npm test               # carry-forward check on a throwaway SQLite file
 npm run lint
 npx prisma migrate dev # after editing prisma/schema.prisma
+npm run backup         # VACUUM INTO a snapshot, into ./backups
 ```
 
 ## Rules that are easy to break

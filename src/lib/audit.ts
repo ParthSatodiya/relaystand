@@ -8,6 +8,7 @@ import prisma from '@/lib/db';
 export const AUDIT_ACTIONS = {
   'org.created': 'Organisation created',
   'org.updated': 'Organisation settings changed',
+  'org.exported': 'Data exported',
   'member.invited': 'Member invited',
   'member.requested': 'Join requested',
   'member.approved': 'Join approved',

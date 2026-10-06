@@ -16,6 +16,7 @@ type Links = typeof import('@/lib/links');
 type Access = typeof import('@/lib/access');
 type Emails = typeof import('@/lib/emails');
 type Audit = typeof import('@/lib/audit');
+type Export = typeof import('@/lib/export');
 let prisma: (typeof import('@/lib/db'))['default'];
 let startStandup: Lib['startStandup'];
 let loadWeek: Lib['loadWeek'];
@@ -30,6 +31,8 @@ let teamContext: Access['teamContext'];
 let parseRecipients: Emails['parseRecipients'];
 let requireTeamMember: Access['requireTeamMember'];
 let auditTeamFilter: Audit['auditTeamFilter'];
+let logEvent: Audit['logEvent'];
+let buildOrgExport: Export['buildOrgExport'];
 
 const dir = mkdtempSync(path.join(tmpdir(), 'standup-test-'));
 let team: { id: number };
@@ -54,7 +57,8 @@ before(async () => {
   ({ monthGrid } = await import('@/lib/days'));
   ({ taskLink } = await import('@/lib/links'));
   ({ teamContext, requireTeamMember } = await import('@/lib/access'));
-  ({ auditTeamFilter } = await import('@/lib/audit'));
+  ({ auditTeamFilter, logEvent } = await import('@/lib/audit'));
+  ({ buildOrgExport } = await import('@/lib/export'));
   ({ parseRecipients } = await import('@/lib/emails'));
 
   user = await prisma.user.create({ data: { email: 'lead@company.com', fullName: 'Lead' } });
@@ -590,4 +594,64 @@ test('demo mode cannot be switched on in a production build', async () => {
   }
 
   set(saved[0], saved[1]);
+});
+
+test('an export carries the whole org, and nothing from the org next door', async () => {
+  // Built here rather than reusing Acme: the tests above have been mutating
+  // that fixture, so its counts are not something to assert against.
+  const boss = await prisma.user.create({ data: { email: 'boss@globex.com', fullName: 'Boss' } });
+  const globex = await prisma.org.create({
+    data: {
+      name: 'Globex',
+      slug: 'globex',
+      createdBy: boss.id,
+      members: { create: [{ email: 'boss@globex.com', name: 'Boss', role: 'admin' }] },
+    },
+  });
+  const ops = await prisma.team.create({
+    data: { name: 'Ops', orgId: globex.id, createdBy: boss.id },
+  });
+  const pat = await prisma.teamMember.create({
+    data: { teamId: ops.id, name: 'Pat', email: 'pat@globex.com', role: 'lead' },
+  });
+  const day = await prisma.standup.create({
+    data: { teamId: ops.id, date: MON, createdBy: boss.id, notes: 'first one' },
+  });
+  const chore = await prisma.standupItem.create({
+    data: { standupId: day.id, memberId: pat.id, title: 'Rotate the certs', originDate: MON },
+  });
+  await prisma.standupItemLink.create({
+    data: { itemId: chore.id, url: 'https://example.atlassian.net/browse/OPS-1' },
+  });
+  await prisma.absence.create({ data: { standupId: day.id, memberId: pat.id } });
+  await logEvent({
+    orgId: globex.id,
+    actor: { email: 'boss@globex.com', name: 'Boss' },
+    action: 'org.created',
+    summary: 'Created Globex',
+  });
+
+  const dump = await buildOrgExport(globex.id);
+
+  assert.equal(dump.org.slug, 'globex');
+  assert.deepEqual(dump.org.members.map((m) => m.email), ['boss@globex.com']);
+  assert.deepEqual(dump.org.teams.map((t) => t.name), ['Ops']);
+  assert.deepEqual(dump.org.teams[0].members.map((m) => m.name), ['Pat']);
+
+  const [standup] = dump.org.teams[0].standups;
+  assert.equal(standup.notes, 'first one');
+  assert.deepEqual(standup.items.map((i) => i.title), ['Rotate the certs']);
+  assert.deepEqual(
+    standup.items[0].links.map((l) => l.url),
+    ['https://example.atlassian.net/browse/OPS-1'],
+    'the pointers to the work come too — a task without them is half the record'
+  );
+  assert.equal(standup.absences.length, 1);
+  assert.deepEqual(dump.org.events.map((e) => e.summary), ['Created Globex']);
+
+  // The whole point of scoping it: Acme is right there in the same file.
+  const json = JSON.stringify(dump);
+  for (const leak of ['acme', 'asha@company.com', 'Ship login', 'Platform']) {
+    assert.ok(!json.includes(leak), `${leak} must not appear in another org's export`);
+  }
 });

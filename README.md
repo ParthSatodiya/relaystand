@@ -119,6 +119,52 @@ the limits we already know about.
 To put it behind Nginx, proxy to port 3000 and pass through `Host`,
 `X-Forwarded-Proto`, and `X-Forwarded-Host`.
 
+### Backups, and getting your data out
+
+Two ways out, neither of them a support ticket.
+
+```shell
+npm run backup                                                # writes ./backups
+docker compose exec relaystand node scripts/backup.mjs /data/backups   # deployed
+```
+
+That is SQLite's `VACUUM INTO`: a consistent snapshot taken while the app keeps
+serving, which copying a live database file is not. Uploaded logos live under
+`UPLOAD_DIR` rather than in the database, so back that up too — or just snapshot
+the whole volume, which holds both.
+
+### Restoring
+
+The thing you restore is the `.db` snapshot. **Stop the app first, and delete the
+`-wal` and `-shm` sidecars** — SQLite ties them to the database they came from,
+and leaving a stale pair next to a restored file does not merely confuse it:
+the next open fails with `database disk image is malformed`.
+
+```shell
+docker compose stop relaystand
+docker compose run --rm relaystand sh -c \
+  'cp /data/backups/relaystand-<stamp>.db /data/relaystand.db &&
+   rm -f /data/relaystand.db-wal /data/relaystand.db-shm'
+docker compose start relaystand
+```
+
+Then watch `docker compose ps` go `healthy`. Practise this once on a scratch
+volume before you need it — a backup nobody has restored is a hope, not a
+backup.
+
+### The JSON export is not a backup
+
+An org admin can press **Download everything** on *Organisation settings* for one
+JSON file holding every team, member, standup, task, link, absence and audit
+entry the organisation owns (`GET /api/orgs/<slug>/export`).
+
+Read it, grep it, load it into a spreadsheet, feed it to something else. But it
+is deliberately an **egress** format, not a restore format: it carries no `User`
+rows, so `createdBy` points at ids that are not in the file. Restore from the
+`.db` snapshot. There is no import endpoint, and that is on purpose — importing
+would write `OrgMember` rows, which is precisely what `AUTH_ALLOWED_DOMAINS`
+exists to control.
+
 ## Tests
 
 ```shell

@@ -157,6 +157,19 @@ export default function OrgSettings({
           )}
         </div>
       </div>
+
+      <div className="space-y-3">
+        <h2 className={`${ui.h2} border-b border-line pb-2.5`}>Your data</h2>
+        <p className="text-xs text-dim">
+          Every team, standup, task and audit entry in this organisation, as one JSON file. Nothing
+          here is locked in. It is for reading and taking elsewhere — restoring a server is a
+          database snapshot, not this.
+        </p>
+        {/* A plain link, not a fetch: the browser streams the download itself. */}
+        <a href={`/api/orgs/${slug}/export`} className={`${ui.btn} ${ui.btnGhost}`}>
+          Download everything
+        </a>
+      </div>
     </div>
   );
 }
