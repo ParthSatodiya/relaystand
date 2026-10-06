@@ -63,6 +63,13 @@ provider that signs you in as the seeded lead. It is gated on
 `NODE_ENV !== 'production'` as well, so it cannot reach a real build — see
 `demoMode()` in `src/lib/signup.ts`, and the test that pins it.
 
+## The words
+
+[CONTEXT.md](CONTEXT.md) is the glossary — what a *task* is versus an *item*,
+why "carried forward" is not a status, and the words this project avoids.
+Decisions that were argued out, with their consequences, are in
+[docs/adr/](docs/adr/). Worth five minutes before your first PR.
+
 ## Touching the UI
 
 Read [DESIGN.md](DESIGN.md) first. Colour and font tokens live in
