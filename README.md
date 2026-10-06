@@ -119,6 +119,15 @@ the limits we already know about.
 To put it behind Nginx, proxy to port 3000 and pass through `Host`,
 `X-Forwarded-Proto`, and `X-Forwarded-Host`.
 
+The container runs as the unprivileged `node` user and reports its own health on
+`/api/health`, which reads a table rather than just answering — a container whose
+volume went missing shows as unhealthy instead of quietly serving an empty app.
+
+> **Upgrading from a build before this?** The `relaystand-data` volume was
+> created root-owned, so the new non-root container cannot write to it. Fix it
+> once:
+> `docker compose run --rm --user root relaystand chown -R node:node /data`
+
 ### Backups, and getting your data out
 
 Two ways out, neither of them a support ticket.

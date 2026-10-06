@@ -33,25 +33,42 @@ FROM node:26-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=3000
+# Docker sets HOSTNAME to the container id, and standalone server.js binds to
+# whatever HOSTNAME says — so without this nothing listens on loopback and the
+# HEALTHCHECK below can never reach it.
+ENV HOSTNAME=0.0.0.0
 # The SQLite file lives on a volume, not in the image.
 ENV DATABASE_URL="file:/data/relaystand.db"
 
-RUN apk add --no-cache openssl && mkdir -p /data
+RUN apk add --no-cache openssl && mkdir -p /data && chown node:node /data /app
 
-COPY --from=build /app/.next/standalone ./
-COPY --from=build /app/.next/static ./.next/static
-COPY --from=build /app/public ./public
+COPY --from=build --chown=node:node /app/.next/standalone ./
+COPY --from=build --chown=node:node /app/.next/static ./.next/static
+COPY --from=build --chown=node:node /app/public ./public
 # Needed so `prisma migrate deploy` can run on start. Prisma 7 keeps the
 # connection URL in prisma.config.ts, not in the schema, so that ships too.
-COPY --from=build /app/prisma ./prisma
-COPY --from=build /app/prisma.config.ts ./prisma.config.ts
-COPY --from=build /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=build --chown=node:node /app/prisma ./prisma
+# `node scripts/backup.mjs` is the documented way to take a snapshot of the
+# volume from inside a running container.
+COPY --from=build --chown=node:node /app/scripts ./scripts
+COPY --from=build --chown=node:node /app/prisma.config.ts ./prisma.config.ts
+COPY --from=build --chown=node:node /app/node_modules/.prisma ./node_modules/.prisma
 # Merged, not siloed: prisma.config.ts does `import ... from "prisma/config"`,
 # which only resolves if the CLI sits in the app tree. The two trees do not
 # overlap — the app has @prisma/client and the adapter, the CLI has the rest.
-COPY --from=migrator /migrator/node_modules ./node_modules
+COPY --from=migrator --chown=node:node /migrator/node_modules ./node_modules
+
+# The node image ships a uid-1000 `node` user. Everything above is chowned to
+# it, so nothing in here runs as root.
+USER node
 
 EXPOSE 3000
+
+# Asks /api/health, which reads a table — a container whose volume vanished
+# still serves pages, and still answers a liveness-only ping.
+HEALTHCHECK --interval=30s --timeout=3s --start-period=20s --retries=3 \
+  CMD node -e "fetch('http://127.0.0.1:'+(process.env.PORT||3000)+'/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+
 # Migrate then serve — a new deploy applies pending migrations by itself.
 # The CLI is invoked by path: the standalone output has no node_modules/.bin.
 CMD ["sh", "-c", "node node_modules/prisma/build/index.js migrate deploy && node server.js"]

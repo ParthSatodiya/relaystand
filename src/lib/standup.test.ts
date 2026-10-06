@@ -655,3 +655,25 @@ test('an export carries the whole org, and nothing from the org next door', asyn
     assert.ok(!json.includes(leak), `${leak} must not appear in another org's export`);
   }
 });
+
+test('the health check answers for the database, not just the process', async () => {
+  const { GET } = await import('@/app/api/health/route');
+
+  const up = await GET();
+  assert.equal(up.status, 200);
+  assert.deepEqual(await up.json(), { ok: true });
+
+  // A liveness-only check passes here, which is exactly the failure worth
+  // catching: the container serving pages with its volume gone. Hide the table
+  // rather than mock the client — the route must really fail.
+  await prisma.$executeRawUnsafe('ALTER TABLE "Org" RENAME TO "Org_hidden"');
+  try {
+    const down = await GET();
+    assert.equal(down.status, 503, 'an unreachable database is not healthy');
+    assert.deepEqual(await down.json(), { ok: false });
+  } finally {
+    await prisma.$executeRawUnsafe('ALTER TABLE "Org_hidden" RENAME TO "Org"');
+  }
+
+  assert.equal((await GET()).status, 200, 'and it recovers when the database does');
+});

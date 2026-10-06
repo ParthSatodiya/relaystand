@@ -99,8 +99,6 @@ log says so every boot.
 
 Stated plainly rather than discovered by surprise:
 
-- **The container runs as root.** Not yet fixed. Run it behind a proxy, do not
-  expose port 3000 to the internet directly.
 - **No rate limiting** on any route, including sign-in. Put it in the proxy if
   you are internet-facing.
 - **An org admin can export the whole organisation** from Settings, in one
