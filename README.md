@@ -119,6 +119,11 @@ the limits we already know about.
 To put it behind Nginx, proxy to port 3000 and pass through `Host`,
 `X-Forwarded-Proto`, and `X-Forwarded-Host`.
 
+At boot the server checks its own configuration and says what is missing, by
+name. A production start with no `AUTH_SECRET` refuses outright rather than
+failing later on somebody's sign-in; everything else is a warning it prints once
+(`src/lib/env.ts`).
+
 The container runs as the unprivileged `node` user and reports its own health on
 `/api/health`, which reads a table rather than just answering — a container whose
 volume went missing shows as unhealthy instead of quietly serving an empty app.

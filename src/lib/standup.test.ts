@@ -677,3 +677,57 @@ test('the health check answers for the database, not just the process', async ()
 
   assert.equal((await GET()).status, 200, 'and it recovers when the database does');
 });
+
+test('the boot check names the variable, and only refuses over a fatal one', async () => {
+  const { checkEnv } = await import('@/lib/env');
+  const keys = [
+    'AUTH_SECRET',
+    'DATABASE_URL',
+    'AUTH_URL',
+    'UPLOAD_DIR',
+    'AUTH_GOOGLE_ID',
+    'NODE_ENV',
+  ] as const;
+  const saved = Object.fromEntries(keys.map((k) => [k, process.env[k]]));
+  const set = (env: Partial<Record<(typeof keys)[number], string>>) => {
+    for (const k of keys) {
+      const v = env[k];
+      if (v === undefined) delete (process.env as Record<string, string | undefined>)[k];
+      else (process.env as Record<string, string | undefined>)[k] = v;
+    }
+  };
+
+  const configured = {
+    AUTH_SECRET: 's3cret',
+    DATABASE_URL: 'file:./prisma/dev.db',
+    AUTH_URL: 'https://standup.acme.com',
+    UPLOAD_DIR: '/data/uploads',
+    AUTH_GOOGLE_ID: 'google-client-id',
+    NODE_ENV: 'production',
+  };
+
+  set(configured);
+  assert.deepEqual(checkEnv(), { fatal: [], warn: [] }, 'a configured server says nothing');
+
+  // The one worth refusing over: no secret means no signed session cookies.
+  set({ ...configured, AUTH_SECRET: undefined });
+  assert.match(checkEnv().fatal.join(' '), /AUTH_SECRET/);
+
+  // Whitespace is not a secret.
+  set({ ...configured, AUTH_SECRET: '   ' });
+  assert.equal(checkEnv().fatal.length, 1, 'a blank AUTH_SECRET is not set');
+
+  // Same hole in development is a warning — `npm run dev` must still start.
+  set({ ...configured, AUTH_SECRET: undefined, NODE_ENV: 'development' });
+  const dev = checkEnv();
+  assert.deepEqual(dev.fatal, [], 'development starts anyway');
+  assert.match(dev.warn.join(' '), /AUTH_SECRET/);
+
+  // Never fatal: the app runs, it just quietly runs against the wrong file.
+  set({ ...configured, DATABASE_URL: undefined });
+  const noDb = checkEnv();
+  assert.deepEqual(noDb.fatal, []);
+  assert.match(noDb.warn.join(' '), /DATABASE_URL/);
+
+  set(saved as Partial<Record<(typeof keys)[number], string>>);
+});
