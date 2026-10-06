@@ -1,6 +1,7 @@
 import NextAuth, { type NextAuthConfig } from 'next-auth';
 import Google from 'next-auth/providers/google';
 import MicrosoftEntraID from 'next-auth/providers/microsoft-entra-id';
+import GitHub from 'next-auth/providers/github';
 import Credentials from 'next-auth/providers/credentials';
 import prisma from '@/lib/db';
 import { demoMode, signUpAllowed, signUpIsOpen } from '@/lib/signup';
@@ -11,6 +12,42 @@ const providers: NextAuthConfig['providers'] = [];
 if (process.env.AUTH_GOOGLE_ID) providers.push(Google);
 if (process.env.AUTH_MICROSOFT_ENTRA_ID_ID) {
   providers.push(MicrosoftEntraID({ issuer: process.env.AUTH_MICROSOFT_ENTRA_ID_ISSUER }));
+}
+if (process.env.AUTH_GITHUB_ID) {
+  providers.push(
+    GitHub({
+      /**
+       * Overridden for one word: `verified`.
+       *
+       * The stock provider takes `emails.find(e => e.primary) ?? emails[0]`
+       * and never looks at `e.verified`, even though GitHub returns it. For
+       * most apps that is harmless — the email is a display detail. Here the
+       * email IS the identity (ADR-0001), matched straight against
+       * TeamMember.email, so an unverified address is a claim on somebody
+       * else's tasks. Take the verified primary, or a verified one, or none:
+       * the signIn callback refuses an account with no email.
+       */
+      userinfo: {
+        url: 'https://api.github.com/user',
+        async request({ tokens }: { tokens: { access_token?: string } }) {
+          const headers = {
+            Authorization: `Bearer ${tokens.access_token}`,
+            'User-Agent': 'relaystand',
+          };
+          const [profile, res] = await Promise.all([
+            fetch('https://api.github.com/user', { headers }).then((r) => r.json()),
+            fetch('https://api.github.com/user/emails', { headers }),
+          ]);
+          const emails: { email: string; primary: boolean; verified: boolean }[] = res.ok
+            ? await res.json()
+            : [];
+          const verified = emails.filter((e) => e.verified);
+          profile.email = (verified.find((e) => e.primary) ?? verified[0])?.email ?? null;
+          return profile;
+        },
+      },
+    })
+  );
 }
 
 // `npm run demo`: one click into the seeded team, no OAuth app to register.

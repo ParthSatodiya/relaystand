@@ -686,6 +686,8 @@ test('the boot check names the variable, and only refuses over a fatal one', asy
     'AUTH_URL',
     'UPLOAD_DIR',
     'AUTH_GOOGLE_ID',
+    'AUTH_MICROSOFT_ENTRA_ID_ID',
+    'AUTH_GITHUB_ID',
     'NODE_ENV',
   ] as const;
   const saved = Object.fromEntries(keys.map((k) => [k, process.env[k]]));
@@ -728,6 +730,22 @@ test('the boot check names the variable, and only refuses over a fatal one', asy
   const noDb = checkEnv();
   assert.deepEqual(noDb.fatal, []);
   assert.match(noDb.warn.join(' '), /DATABASE_URL/);
+
+  // Any one provider is enough. Easy to break by adding a provider to auth.ts
+  // and forgetting this list, which then nags a correctly configured server.
+  for (const only of ['AUTH_GOOGLE_ID', 'AUTH_MICROSOFT_ENTRA_ID_ID', 'AUTH_GITHUB_ID'] as const) {
+    set({ ...configured, AUTH_GOOGLE_ID: undefined, [only]: 'a-client-id' });
+    assert.ok(
+      !checkEnv().warn.some((w) => w.includes('No sign-in provider')),
+      `${only} alone is a configured provider`
+    );
+  }
+
+  set({ ...configured, AUTH_GOOGLE_ID: undefined });
+  assert.ok(
+    checkEnv().warn.some((w) => w.includes('No sign-in provider')),
+    'but no provider at all is worth saying'
+  );
 
   set(saved as Partial<Record<(typeof keys)[number], string>>);
 });

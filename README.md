@@ -39,8 +39,8 @@ build. `npm test` pins that.
 
 ## Requirements
 
-Node 26+, and a Google or Microsoft (Entra ID) OAuth app for sign-in — except
-for `npm run demo`, which needs neither.
+Node 26+, and a Google, Microsoft (Entra ID) or GitHub OAuth app for sign-in —
+except for `npm run demo`, which needs neither.
 
 ## Local setup
 
@@ -63,6 +63,17 @@ Then add at least one provider. You only need one; both work side by side.
 (Web application). Authorised redirect URI:
 `http://localhost:3000/api/auth/callback/google`. Copy the client ID and secret
 into `AUTH_GOOGLE_ID` / `AUTH_GOOGLE_SECRET`.
+
+**GitHub** — Settings → Developer settings → OAuth Apps → New OAuth App.
+Authorization callback URL: `http://localhost:3000/api/auth/callback/github`.
+Copy the values into `AUTH_GITHUB_ID` / `AUTH_GITHUB_SECRET`.
+
+Two things worth knowing. RelayStand only accepts a GitHub address that GitHub
+itself has **verified** — the stock integration does not check that, and here
+the email is the identity. And GitHub accounts usually carry a personal
+address, so `AUTH_ALLOWED_DOMAINS` will not match: name people with
+`AUTH_ALLOWED_EMAILS` instead, or you have left sign-in open to anyone with a
+GitHub account.
 
 **Microsoft / Outlook** — Azure Portal → Entra ID → App registrations → New
 registration. Redirect URI:

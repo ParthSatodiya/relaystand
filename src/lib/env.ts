@@ -17,7 +17,8 @@ export function checkEnv() {
   const set = (name: string) => Boolean(process.env[name]?.trim());
 
   const production = process.env.NODE_ENV === 'production';
-  const hasProvider = set('AUTH_GOOGLE_ID') || set('AUTH_MICROSOFT_ENTRA_ID_ID');
+  const hasProvider =
+    set('AUTH_GOOGLE_ID') || set('AUTH_MICROSOFT_ENTRA_ID_ID') || set('AUTH_GITHUB_ID');
 
   // Signs the session cookies. Auth.js throws on the first request without it,
   // so in production this is worth refusing to start over.
@@ -41,9 +42,9 @@ export function checkEnv() {
 
   if (!hasProvider && !demoMode()) {
     warn.push(
-      'No sign-in provider is configured. Set AUTH_GOOGLE_ID or ' +
-        'AUTH_MICROSOFT_ENTRA_ID_ID, or run `npm run demo`. Until then nobody ' +
-        'can sign in, and /login says so.'
+      'No sign-in provider is configured. Set AUTH_GOOGLE_ID, ' +
+        'AUTH_MICROSOFT_ENTRA_ID_ID or AUTH_GITHUB_ID, or run `npm run demo`. ' +
+        'Until then nobody can sign in, and /login says so.'
     );
   }
 

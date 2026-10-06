@@ -27,16 +27,16 @@ The latest commit on `main`. There are no maintained release branches yet, so
 Worth knowing before you assess it. A deployment stores work email addresses and
 display names, task titles and comments, links pasted onto tasks, who finished
 what and when, an organisation logo if one was uploaded, and an audit trail of
-membership and task changes. No passwords — sign-in is delegated to Google or
-Microsoft Entra. No payment data. No content from the linked systems, only the
+membership and task changes. No passwords — sign-in is delegated to Google,
+Microsoft Entra or GitHub. No payment data. No content from the linked systems, only the
 URLs.
 
 ## Things you should get right when self-hosting
 
 These are configuration, not bugs, and they are the ones people miss.
 
-**Close sign-in.** This is the big one. A Google or Entra OAuth client in its
-usual "any account" mode authenticates anybody, and anyone who signs in can
+**Close sign-in.** This is the big one. A Google, Entra or GitHub OAuth client
+in its usual "any account" mode authenticates anybody, and anyone who signs in can
 create their own organisation on your server. Joining an existing organisation
 always needs an admin's approval, so your data is not exposed — but strangers
 can sign up and squat.
@@ -51,7 +51,16 @@ AUTH_ALLOWED_EMAILS="contractor@gmail.com"
 Matches are exact: `acme.com` does not admit `mail.acme.com` or
 `evil-acme.com`. With both empty the server logs a warning at boot and lets
 anyone in. Belt and braces: set your Google OAuth client to **Internal** if you
-have a Workspace, or your Entra registration to **single tenant**.
+have a Workspace, or your Entra registration to **single tenant**. GitHub has
+no equivalent — every GitHub account is "any account" — so an instance offering
+GitHub sign-in leans entirely on the list above, and on `AUTH_ALLOWED_EMAILS`
+rather than domains, because GitHub accounts usually carry a personal address.
+
+RelayStand only accepts a GitHub address GitHub has **verified**. Auth.js's own
+GitHub provider takes the primary address without checking `verified` and falls
+back to the first one it finds; since identity here is the email, that would let
+an unverified address claim an existing member's row. `src/auth.ts` overrides
+the lookup for exactly that reason.
 
 **Generate a real `AUTH_SECRET`.** `npx auth secret`, or
 `openssl rand -base64 32`. It signs the session cookies. Never commit it, and
