@@ -40,7 +40,7 @@
     "prisma": "7.10.0",
     "tailwindcss": "^4",
     "tsx": "4.23.13",
-    "typescript": "^5"
+    "typescript": "^7"
   },
   "overrides": {
     "mysql2": "^3.24.4",
