@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { format, isToday, parseISO } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { ChevronLeft, ChevronRight, Play, Plus } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useRun } from '@/lib/useRun';
@@ -20,11 +20,10 @@ interface BoardData {
   members: MemberRow[];
 }
 
-const todayStr = () => format(new Date(), 'yyyy-MM-dd');
-
 export default function Board({
   teamId,
   date,
+  today,
   board,
   week,
   days,
@@ -33,6 +32,8 @@ export default function Board({
 }: {
   teamId: number;
   date: string;
+  /** The server's today. Never recomputed here — see the comment in page.tsx. */
+  today: string;
   board: BoardData | null;
   week: Week;
   /** Every day this team has stood up — the dots in the picker. */
@@ -92,15 +93,15 @@ export default function Board({
           </button>
           <button
             onClick={() => goto(shift(1))}
-            disabled={date >= todayStr()}
+            disabled={date >= today}
             aria-label="Next working day"
             className={`${ui.btn} ${ui.btnGhost} px-2 disabled:opacity-30`}
           >
             <ChevronRight size={16} />
           </button>
           <button
-            onClick={() => goto(todayStr())}
-            disabled={isToday(parseISO(date))}
+            onClick={() => goto(today)}
+            disabled={date === today}
             className="cursor-pointer rounded-full border border-line px-2.5 py-0.5 text-[11px] uppercase tracking-[0.11em] text-dim transition hover:border-baton hover:text-baton disabled:opacity-30 disabled:hover:border-line disabled:hover:text-dim"
           >
             Today
@@ -109,7 +110,7 @@ export default function Board({
           {picking && (
             <DayPicker
               date={date}
-              today={todayStr()}
+              today={today}
               days={days}
               onPick={(pick) => {
                 setPicking(false);

@@ -1,5 +1,5 @@
 import { pageMembership } from '@/lib/page';
-import { dateParam, doneCountsBefore, loadBoard, loadWeek, standupDays } from '@/lib/standup';
+import { dateParam, doneCountsBefore, loadBoard, loadWeek, standupDays, today } from '@/lib/standup';
 import NoAccess from '@/components/NoAccess';
 import Board from './Board';
 
@@ -29,6 +29,10 @@ export default async function BoardPage({
     <Board
       teamId={teamId}
       date={date}
+      // Derived here, not in the browser: a standup day is the team's day, and
+      // the team's day is whatever the server's TZ says. A viewer in another
+      // zone must not see a different "today" from the one the API will write.
+      today={today()}
       board={board}
       week={week}
       days={days}

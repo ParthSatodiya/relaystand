@@ -130,6 +130,29 @@ the limits we already know about.
 To put it behind Nginx, proxy to port 3000 and pass through `Host`,
 `X-Forwarded-Proto`, and `X-Forwarded-Host`.
 
+### Which day is "today"
+
+Set `TZ` to the team's timezone, not the server's location:
+
+```shell
+TZ="Asia/Kolkata"
+```
+
+A standup day is a calendar day, and a calendar day only exists relative to a
+zone. The same instant — 19:30 UTC — is the 8th in London and already the 9th in
+Kolkata, so without this an Auckland team's 9am standup files under *yesterday*,
+permanently, not just near midnight.
+
+It needs no extra packages: Node resolves zones through its own bundled ICU, so
+it works in the Alpine image as shipped. Timestamps (`createdAt`) are UTC either
+way and are unaffected — `TZ` only decides which day new standups are filed
+under, and where the board's day boundary falls.
+
+The server owns this decision alone. The board is told what today is rather than
+working it out in the browser, so a developer visiting from another timezone
+sees the team's day, not their own, and the Today button can never disagree with
+the day the API writes.
+
 At boot the server checks its own configuration and says what is missing, by
 name. A production start with no `AUTH_SECRET` refuses outright rather than
 failing later on somebody's sign-in; everything else is a warning it prints once

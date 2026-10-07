@@ -5,7 +5,7 @@
 import { after, before, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdtempSync, readdirSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
@@ -748,4 +748,33 @@ test('the boot check names the variable, and only refuses over a fatal one', asy
   );
 
   set(saved as Partial<Record<(typeof keys)[number], string>>);
+});
+
+test('no client component decides what day it is', () => {
+  // A standup day is the TEAM's day, fixed by the server's TZ. A browser that
+  // works out "today" for itself puts the viewer's midnight in charge, so near
+  // the boundary the Today button and the next-day arrow disagree with the day
+  // the API actually writes. The server passes `today` down; nothing recomputes
+  // it. This walks the tree rather than naming files, so a new component is
+  // covered the day it is written.
+  const offenders: string[] = [];
+  const walk = (dir: string) => {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        walk(full);
+      } else if (/\.tsx?$/.test(entry.name) && !entry.name.includes('.test.')) {
+        const src = readFileSync(full, 'utf8');
+        if (!/^['"]use client['"]/m.test(src)) continue;
+        if (/new Date\(\)|Date\.now\(\)/.test(src)) offenders.push(full);
+      }
+    }
+  };
+  walk('src');
+
+  assert.deepEqual(
+    offenders,
+    [],
+    `these run on the viewer's clock, not the team's: ${offenders.join(', ')}`
+  );
 });
